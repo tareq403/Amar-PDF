@@ -7,7 +7,7 @@ import sys
 from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QFileDialog,
                              QAction, QScrollArea, QPushButton,
                              QVBoxLayout, QHBoxLayout, QWidget, QDialog, QSlider)
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QKeySequence
 from PyQt5.QtCore import Qt
 
 from dialogs import TextFormatDialog
@@ -109,10 +109,12 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         file_menu = menubar.addMenu("File")
 
         open_action = QAction("Open PDF", self)
+        open_action.setShortcut(QKeySequence.Open)  # CMD+O on Mac, Ctrl+O on other OS
         open_action.triggered.connect(self.open_pdf)
         file_menu.addAction(open_action)
 
         save_action = QAction("Save", self)
+        save_action.setShortcut(QKeySequence.Save)  # CMD+S on Mac, Ctrl+S on other OS
         save_action.triggered.connect(self.save_pdf)
         file_menu.addAction(save_action)
 
