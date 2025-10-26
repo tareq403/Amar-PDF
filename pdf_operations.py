@@ -3,8 +3,9 @@ PDF file operations and rendering
 """
 
 import fitz  # PyMuPDF
+import tempfile
 from PyQt5.QtGui import QImage, QPixmap
-from models import TextAnnotation, ImageAnnotation
+from models import TextAnnotation, ImageAnnotation, DoodleAnnotation
 
 
 class PDFOperations:
@@ -105,3 +106,28 @@ class PDFOperations:
                     page.insert_image(rect, filename=annotation.image_path)
                 except Exception as e:
                     print(f"Failed to insert image: {e}")
+
+            elif isinstance(annotation, DoodleAnnotation):
+                # Convert screen coordinates to PDF coordinates
+                pdf_x = annotation.x / (2.0 * zoom_at_creation)
+                pdf_y = annotation.y / (2.0 * zoom_at_creation)
+                pdf_width = annotation.width / (2.0 * zoom_at_creation)
+                pdf_height = annotation.height / (2.0 * zoom_at_creation)
+
+                # Define the rectangle where the doodle will be placed
+                rect = fitz.Rect(pdf_x, pdf_y, pdf_x + pdf_width, pdf_y + pdf_height)
+
+                # Save the doodle pixmap to a temporary file
+                try:
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
+                        temp_path = tmp_file.name
+                        annotation.pixmap.save(temp_path, 'PNG')
+
+                    # Insert the doodle image
+                    page.insert_image(rect, filename=temp_path)
+
+                    # Clean up temp file
+                    import os
+                    os.unlink(temp_path)
+                except Exception as e:
+                    print(f"Failed to insert doodle: {e}")

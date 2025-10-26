@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QFileDialog,
 from PyQt5.QtGui import QFont, QKeySequence
 from PyQt5.QtCore import Qt
 
-from dialogs import TextFormatDialog
-from models import TextAnnotation, ImageAnnotation
+from dialogs import TextFormatDialog, DoodleDialog
+from models import TextAnnotation, ImageAnnotation, DoodleAnnotation
 from widgets import PDFViewLabel
 from pdf_operations import PDFOperations
 from window_manager import WindowManager
@@ -305,8 +305,7 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         elif self.current_mode == EditMode.IMAGE:
             self._handle_image_mode_click(label_pos)
         elif self.current_mode == EditMode.DOODLE:
-            # Doodle mode - not implemented yet
-            pass
+            self._handle_doodle_mode_click(label_pos)
 
     def _handle_text_mode_click(self, label_pos):
         """Handle mouse click in text mode"""
@@ -340,6 +339,20 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         if image_path:
             self.add_draft_image(label_pos.x(), label_pos.y(), image_path)
 
+    def _handle_doodle_mode_click(self, label_pos):
+        """Handle mouse click in doodle mode"""
+        # Check if clicking on existing annotation
+        for annotation in self.label.annotations:
+            if annotation.contains_point(label_pos.x(), label_pos.y(), self.zoom_level):
+                return
+
+        # Open doodle dialog
+        dialog = DoodleDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            drawing_data = dialog.get_drawing_data()
+            if drawing_data:
+                self.add_draft_doodle(label_pos.x(), label_pos.y(), drawing_data)
+
     def add_draft_text(self, x, y, format_values):
         """Add text annotation in draft mode"""
         annotation = TextAnnotation(
@@ -362,6 +375,15 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
     def add_draft_image(self, x, y, image_path):
         """Add image annotation in draft mode"""
         annotation = ImageAnnotation(x, y, image_path, self.current_page)
+        annotation.created_at_zoom = self.zoom_level
+
+        self.draft_annotations.append(annotation)
+        self.label.annotations.append(annotation)
+        self.label.update()
+
+    def add_draft_doodle(self, x, y, drawing_data):
+        """Add doodle annotation in draft mode"""
+        annotation = DoodleAnnotation(x, y, self.current_page, drawing_data)
         annotation.created_at_zoom = self.zoom_level
 
         self.draft_annotations.append(annotation)

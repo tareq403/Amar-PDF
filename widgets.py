@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPainter, QPen
 from PyQt5.QtCore import Qt, QPoint
 
 from dialogs import TextFormatDialog
-from models import TextAnnotation, ImageAnnotation
+from models import TextAnnotation, ImageAnnotation, DoodleAnnotation
 
 # Import EditMode to avoid circular import
 try:
@@ -78,11 +78,21 @@ class PDFViewLabel(QLabel):
                 painter.setPen(pen)
                 painter.drawRect(rect)
 
+            elif isinstance(annotation, DoodleAnnotation):
+                # Draw the doodle
+                scaled_pixmap = annotation.get_scaled_pixmap(self.zoom_level)
+                painter.drawPixmap(rect.topLeft(), scaled_pixmap)
+
+                # Draw dashed border
+                pen = QPen(Qt.blue, 2, Qt.DashLine)
+                painter.setPen(pen)
+                painter.drawRect(rect)
+
         painter.end()
 
     def get_resize_edge(self, annotation, x, y):
-        """Check if point is near an edge for resizing (only for images)"""
-        if not isinstance(annotation, ImageAnnotation):
+        """Check if point is near an edge for resizing (images and doodles)"""
+        if not isinstance(annotation, (ImageAnnotation, DoodleAnnotation)):
             return None
 
         rect = annotation.get_rect(self.zoom_level)
@@ -174,9 +184,9 @@ class PDFViewLabel(QLabel):
             # Update cursor based on hover position and mode
             cursor_set = False
 
-            # Check for image resize edges first (highest priority)
+            # Check for image/doodle resize edges first (highest priority)
             for annotation in self.annotations:
-                if isinstance(annotation, ImageAnnotation):
+                if isinstance(annotation, (ImageAnnotation, DoodleAnnotation)):
                     edge = self.get_resize_edge(annotation, event.x(), event.y())
                     if edge in (ResizeEdge.LEFT, ResizeEdge.RIGHT):
                         self.setCursor(Qt.SizeHorCursor)
