@@ -4,6 +4,7 @@ A simple PDF viewer and editor application built with PyQt5 and PyMuPDF.
 """
 
 import sys
+from enum import Enum
 from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QFileDialog,
                              QAction, QScrollArea, QPushButton,
                              QVBoxLayout, QHBoxLayout, QWidget, QDialog, QSlider)
@@ -11,10 +12,17 @@ from PyQt5.QtGui import QFont, QKeySequence
 from PyQt5.QtCore import Qt
 
 from dialogs import TextFormatDialog
-from models import TextAnnotation
+from models import TextAnnotation, ImageAnnotation
 from widgets import PDFViewLabel
 from pdf_operations import PDFOperations
 from window_manager import WindowManager
+
+
+class EditMode(Enum):
+    """Editing modes for the PDF editor"""
+    TEXT = "text"
+    IMAGE = "image"
+    DOODLE = "doodle"
 
 
 class PDFEditor(QMainWindow, PDFOperations, WindowManager):
@@ -30,10 +38,12 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.current_page = 0
         self.draft_annotations = []
         self.zoom_level = 1.0
+        self.current_mode = EditMode.TEXT  # Default mode
 
         # Setup UI
         self._setup_ui()
         self._setup_menubar()
+        self.toolbar = self._setup_toolbar()
 
     def _setup_ui(self):
         """Setup the user interface"""
@@ -60,6 +70,7 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         # Create PDF view label
         self.label = PDFViewLabel()
         self.label.setAlignment(Qt.AlignCenter)
+        self.label.current_mode = self.current_mode  # Initialize with current mode
 
         # Start with welcome label in scroll area
         self.scroll_area.setWidget(self.welcome_label)
@@ -117,6 +128,51 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         save_action.setShortcut(QKeySequence.Save)  # CMD+S on Mac, Ctrl+S on other OS
         save_action.triggered.connect(self.save_pdf)
         file_menu.addAction(save_action)
+
+    def _setup_toolbar(self):
+        """Setup the toolbar"""
+        toolbar = self.addToolBar("Main Toolbar")
+        toolbar.setMovable(False)
+
+        # Save PDF button
+        save_pdf_action = QAction("Save PDF", self)
+        save_pdf_action.triggered.connect(self.save_pdf)
+        toolbar.addAction(save_pdf_action)
+
+        toolbar.addSeparator()
+
+        # Add Text button (checkable for mode selection)
+        self.add_text_action = QAction("Add Text", self)
+        self.add_text_action.setCheckable(True)
+        self.add_text_action.setChecked(True)  # Default mode
+        self.add_text_action.triggered.connect(lambda: self.set_mode(EditMode.TEXT))
+        toolbar.addAction(self.add_text_action)
+
+        # Add Image button (checkable for mode selection)
+        self.add_image_action = QAction("Add Image", self)
+        self.add_image_action.setCheckable(True)
+        self.add_image_action.triggered.connect(lambda: self.set_mode(EditMode.IMAGE))
+        toolbar.addAction(self.add_image_action)
+
+        # Add Doodle button (checkable for mode selection)
+        self.add_doodle_action = QAction("Add Doodle", self)
+        self.add_doodle_action.setCheckable(True)
+        self.add_doodle_action.triggered.connect(lambda: self.set_mode(EditMode.DOODLE))
+        toolbar.addAction(self.add_doodle_action)
+
+        return toolbar
+
+    def set_mode(self, mode):
+        """Set the current editing mode (text, image, or doodle)"""
+        self.current_mode = mode
+
+        # Update button states - only one should be checked
+        self.add_text_action.setChecked(mode == EditMode.TEXT)
+        self.add_image_action.setChecked(mode == EditMode.IMAGE)
+        self.add_doodle_action.setChecked(mode == EditMode.DOODLE)
+
+        # Update label's current mode for cursor changes
+        self.label.current_mode = mode
 
     # PDF Operations
     def open_pdf(self):
@@ -219,12 +275,13 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         pdf_height = self.label.pixmap().height()
 
         menubar_height = self.menuBar().height() if self.menuBar().height() > 0 else 25
+        toolbar_height = self.toolbar.height() if self.toolbar.height() > 0 else 40
         self.prev_button.adjustSize()
         button_height = max(self.prev_button.height(), 40) + 10
 
         # Calculate optimal size using WindowManager mixin
         width, height = self.calculate_window_size(
-            pdf_width, pdf_height, menubar_height, button_height
+            pdf_width, pdf_height, menubar_height + toolbar_height, button_height
         )
 
         self.resize(width, height)
@@ -232,7 +289,7 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
 
     # Annotation Operations
     def mousePressEvent(self, event):
-        """Handle mouse press events for adding text annotations"""
+        """Handle mouse press events based on current mode"""
         if not self.doc:
             self.open_pdf()
             return
@@ -242,17 +299,46 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         if not self.label.rect().contains(label_pos):
             return
 
+        # Handle different modes
+        if self.current_mode == EditMode.TEXT:
+            self._handle_text_mode_click(label_pos)
+        elif self.current_mode == EditMode.IMAGE:
+            self._handle_image_mode_click(label_pos)
+        elif self.current_mode == EditMode.DOODLE:
+            # Doodle mode - not implemented yet
+            pass
+
+    def _handle_text_mode_click(self, label_pos):
+        """Handle mouse click in text mode"""
         # Check if clicking on existing annotation
         for annotation in self.label.annotations:
             if annotation.contains_point(label_pos.x(), label_pos.y(), self.zoom_level):
                 return
 
-        # Add new annotation
+        # Add new text annotation
         dialog = TextFormatDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             values = dialog.get_values()
             if values['text']:
                 self.add_draft_text(label_pos.x(), label_pos.y(), values)
+
+    def _handle_image_mode_click(self, label_pos):
+        """Handle mouse click in image mode"""
+        # Check if clicking on existing annotation
+        for annotation in self.label.annotations:
+            if annotation.contains_point(label_pos.x(), label_pos.y(), self.zoom_level):
+                return
+
+        # Open file dialog to select image
+        image_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Image",
+            "",
+            "Image Files (*.png *.jpg *.jpeg *.bmp *.gif)"
+        )
+
+        if image_path:
+            self.add_draft_image(label_pos.x(), label_pos.y(), image_path)
 
     def add_draft_text(self, x, y, format_values):
         """Add text annotation in draft mode"""
@@ -267,6 +353,15 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
             underline=format_values['underline'],
             strikethrough=format_values['strikethrough']
         )
+        annotation.created_at_zoom = self.zoom_level
+
+        self.draft_annotations.append(annotation)
+        self.label.annotations.append(annotation)
+        self.label.update()
+
+    def add_draft_image(self, x, y, image_path):
+        """Add image annotation in draft mode"""
+        annotation = ImageAnnotation(x, y, image_path, self.current_page)
         annotation.created_at_zoom = self.zoom_level
 
         self.draft_annotations.append(annotation)
