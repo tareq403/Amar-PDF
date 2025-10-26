@@ -35,10 +35,31 @@ class PDFOperations:
             zoom_at_creation = getattr(annotation, 'created_at_zoom', 1.0)
 
             if isinstance(annotation, TextAnnotation):
+                from core.constants import TEXT_ANNOTATION_Y_OFFSET
+
                 # Convert screen coordinates to PDF coordinates
-                # Divide by the zoom level at creation time and the base scale high DPI matrix
                 pdf_x = annotation.x / (BASE_SCALE * zoom_at_creation)
                 pdf_y = annotation.y / (BASE_SCALE * zoom_at_creation)
+
+                # X adjustment: In preview, text has 5px left padding inside the rect
+                # Convert to PDF space (5px at BASE_SCALE display)
+                x_padding_pdf = 5.0 / BASE_SCALE
+                pdf_x = pdf_x + x_padding_pdf
+
+                # Y adjustment: annotation.height is calculated at zoom=1.0 with BASE_SCALE font
+                # So it's in screen pixels at BASE_SCALE * 1.0
+                # Convert height to PDF space
+                height_pdf = annotation.height / BASE_SCALE
+
+                # In preview: rect_top = y - height + TEXT_ANNOTATION_Y_OFFSET (in original coords)
+                rect_top_original = pdf_y - height_pdf + (TEXT_ANNOTATION_Y_OFFSET / BASE_SCALE)
+
+                # For PDF baseline positioning:
+                # Qt's AlignVCenter centers the text visually in the rect
+                # PDF's insert_text places text at baseline
+                # The baseline should be lower than center - around 65% down from top
+                # This accounts for the fact that most glyphs sit above the baseline
+                pdf_y = rect_top_original + (height_pdf * 0.65)
 
                 # Build font name with style modifiers
                 fontname = annotation.font_family
