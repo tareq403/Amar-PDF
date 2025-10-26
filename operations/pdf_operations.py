@@ -5,6 +5,7 @@ PDF file operations and rendering
 import fitz  # PyMuPDF
 import tempfile
 from PyQt5.QtGui import QImage, QPixmap
+from core.constants import BASE_SCALE
 from models import TextAnnotation, ImageAnnotation, DoodleAnnotation
 
 
@@ -35,9 +36,9 @@ class PDFOperations:
 
             if isinstance(annotation, TextAnnotation):
                 # Convert screen coordinates to PDF coordinates
-                # Divide by the zoom level at creation time and the base 2x high DPI matrix
-                pdf_x = annotation.x / (2.0 * zoom_at_creation)
-                pdf_y = annotation.y / (2.0 * zoom_at_creation)
+                # Divide by the zoom level at creation time and the base scale high DPI matrix
+                pdf_x = annotation.x / (BASE_SCALE * zoom_at_creation)
+                pdf_y = annotation.y / (BASE_SCALE * zoom_at_creation)
 
                 # Build font name with style modifiers
                 fontname = annotation.font_family
@@ -68,8 +69,8 @@ class PDFOperations:
                     )
 
                     # Calculate text width for underline/strikethrough
-                    # Use the actual font metrics from Qt (divided by 2 for PDF coordinates)
-                    text_width = annotation.width / 2
+                    # Use the actual font metrics from Qt (divided by base scale for PDF coordinates)
+                    text_width = annotation.width / BASE_SCALE
 
                     # Add underline if needed
                     if annotation.underline:
@@ -93,10 +94,10 @@ class PDFOperations:
 
             elif isinstance(annotation, ImageAnnotation):
                 # Convert screen coordinates to PDF coordinates
-                pdf_x = annotation.x / (2.0 * zoom_at_creation)
-                pdf_y = annotation.y / (2.0 * zoom_at_creation)
-                pdf_width = annotation.width / (2.0 * zoom_at_creation)
-                pdf_height = annotation.height / (2.0 * zoom_at_creation)
+                pdf_x = annotation.x / (BASE_SCALE * zoom_at_creation)
+                pdf_y = annotation.y / (BASE_SCALE * zoom_at_creation)
+                pdf_width = annotation.width / (BASE_SCALE * zoom_at_creation)
+                pdf_height = annotation.height / (BASE_SCALE * zoom_at_creation)
 
                 # Define the rectangle where the image will be placed
                 rect = fitz.Rect(pdf_x, pdf_y, pdf_x + pdf_width, pdf_y + pdf_height)
@@ -109,10 +110,10 @@ class PDFOperations:
 
             elif isinstance(annotation, DoodleAnnotation):
                 # Convert screen coordinates to PDF coordinates
-                pdf_x = annotation.x / (2.0 * zoom_at_creation)
-                pdf_y = annotation.y / (2.0 * zoom_at_creation)
-                pdf_width = annotation.width / (2.0 * zoom_at_creation)
-                pdf_height = annotation.height / (2.0 * zoom_at_creation)
+                pdf_x = annotation.x / (BASE_SCALE * zoom_at_creation)
+                pdf_y = annotation.y / (BASE_SCALE * zoom_at_creation)
+                pdf_width = annotation.width / (BASE_SCALE * zoom_at_creation)
+                pdf_height = annotation.height / (BASE_SCALE * zoom_at_creation)
 
                 # Define the rectangle where the doodle will be placed
                 rect = fitz.Rect(pdf_x, pdf_y, pdf_x + pdf_width, pdf_y + pdf_height)

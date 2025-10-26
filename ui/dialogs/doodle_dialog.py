@@ -1,97 +1,27 @@
 """
-Dialog classes for PDF Editor
+Doodle/drawing dialog
 """
 
-from PyQt5.QtWidgets import (QDialog, QLineEdit, QFontComboBox, QSpinBox,
-                             QCheckBox, QDialogButtonBox, QFormLayout,
-                             QGroupBox, QVBoxLayout, QLabel, QHBoxLayout,
-                             QPushButton, QColorDialog)
-from PyQt5.QtGui import QFont, QPainter, QPen, QPixmap, QColor
+from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QLabel, QHBoxLayout,
+                             QPushButton, QColorDialog, QSpinBox, QDialogButtonBox)
+from PyQt5.QtGui import QPainter, QPen, QPixmap
 from PyQt5.QtCore import Qt, QPoint
 
-
-class TextFormatDialog(QDialog):
-    """Dialog for text input with font formatting options"""
-    def __init__(self, parent=None, initial_text="", initial_font="Arial", initial_size=12,
-                 initial_bold=False, initial_italic=False, initial_underline=False, initial_strikethrough=False):
-        super().__init__(parent)
-        self.setWindowTitle("Text Format")
-        self.setMinimumWidth(400)
-
-        layout = QVBoxLayout(self)
-
-        # Text input
-        form_layout = QFormLayout()
-        self.text_edit = QLineEdit(initial_text)
-        form_layout.addRow("Text:", self.text_edit)
-
-        # Font selection
-        self.font_combo = QFontComboBox()
-        self.font_combo.setCurrentFont(QFont(initial_font))
-        form_layout.addRow("Font:", self.font_combo)
-
-        # Font size
-        self.size_spin = QSpinBox()
-        self.size_spin.setMinimum(6)
-        self.size_spin.setMaximum(72)
-        self.size_spin.setValue(initial_size)
-        form_layout.addRow("Size:", self.size_spin)
-
-        layout.addLayout(form_layout)
-
-        # Text decorations
-        decoration_group = QGroupBox("Text Decorations")
-        decoration_layout = QVBoxLayout()
-
-        self.bold_check = QCheckBox("Bold")
-        self.bold_check.setChecked(initial_bold)
-        decoration_layout.addWidget(self.bold_check)
-
-        self.italic_check = QCheckBox("Italic")
-        self.italic_check.setChecked(initial_italic)
-        decoration_layout.addWidget(self.italic_check)
-
-        self.underline_check = QCheckBox("Underline")
-        self.underline_check.setChecked(initial_underline)
-        decoration_layout.addWidget(self.underline_check)
-
-        self.strikethrough_check = QCheckBox("Strikethrough")
-        self.strikethrough_check.setChecked(initial_strikethrough)
-        decoration_layout.addWidget(self.strikethrough_check)
-
-        decoration_group.setLayout(decoration_layout)
-        layout.addWidget(decoration_group)
-
-        # Buttons
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
-
-    def get_values(self):
-        """Return the text and formatting options"""
-        return {
-            'text': self.text_edit.text(),
-            'font_family': self.font_combo.currentFont().family(),
-            'font_size': self.size_spin.value(),
-            'bold': self.bold_check.isChecked(),
-            'italic': self.italic_check.isChecked(),
-            'underline': self.underline_check.isChecked(),
-            'strikethrough': self.strikethrough_check.isChecked()
-        }
+from core.constants import (CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_PEN_WIDTH,
+                             MIN_PEN_WIDTH, MAX_PEN_WIDTH)
 
 
 class DrawingCanvas(QLabel):
     """Canvas widget for free-hand drawing"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(600, 400)
+        self.setMinimumSize(CANVAS_WIDTH, CANVAS_HEIGHT)
         self.setStyleSheet("background-color: white; border: 1px solid gray;")
 
         self.drawing = False
         self.current_stroke = []
         self.strokes = []  # List of stroke dictionaries
-        self.current_pen = QPen(Qt.black, 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        self.current_pen = QPen(Qt.black, DEFAULT_PEN_WIDTH, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
 
         # Create canvas pixmap
         self.canvas = QPixmap(self.size())
@@ -175,9 +105,9 @@ class DoodleDialog(QDialog):
         # Pen width
         controls_layout.addWidget(QLabel("Pen Width:"))
         self.width_spin = QSpinBox()
-        self.width_spin.setMinimum(1)
-        self.width_spin.setMaximum(20)
-        self.width_spin.setValue(2)
+        self.width_spin.setMinimum(MIN_PEN_WIDTH)
+        self.width_spin.setMaximum(MAX_PEN_WIDTH)
+        self.width_spin.setValue(DEFAULT_PEN_WIDTH)
         self.width_spin.valueChanged.connect(self.canvas.set_pen_width)
         controls_layout.addWidget(self.width_spin)
 

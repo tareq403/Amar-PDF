@@ -1,31 +1,16 @@
 """
-Custom widgets for PDF Editor
+PDF View Label widget
+Custom label for displaying and interacting with PDF annotations
 """
 
 from PyQt5.QtWidgets import QLabel, QDialog
 from PyQt5.QtGui import QPainter, QPen
 from PyQt5.QtCore import Qt, QPoint
 
-from dialogs import TextFormatDialog
+from core.enums import EditMode, ResizeEdge
+from core.constants import EDGE_RESIZE_THRESHOLD, MIN_ANNOTATION_SIZE
+from ui.dialogs import TextFormatDialog
 from models import TextAnnotation, ImageAnnotation, DoodleAnnotation
-
-# Import EditMode to avoid circular import
-try:
-    from enum import Enum
-    class EditMode(Enum):
-        TEXT = "text"
-        IMAGE = "image"
-        DOODLE = "doodle"
-except:
-    EditMode = None
-
-
-class ResizeEdge(Enum):
-    """Enum for image resize edges"""
-    LEFT = "left"
-    RIGHT = "right"
-    TOP = "top"
-    BOTTOM = "bottom"
 
 
 class PDFViewLabel(QLabel):
@@ -37,7 +22,7 @@ class PDFViewLabel(QLabel):
         self.drag_offset = QPoint(0, 0)
         self.zoom_level = 1.0  # Default zoom level
         self.resizing_annotation = None
-        self.resize_edge = None  # Which edge is being resized: 'left', 'right', 'top', 'bottom'
+        self.resize_edge = None  # Which edge is being resized
         self.resize_start_pos = QPoint(0, 0)
         self.current_mode = None  # Will be set by parent editor
         self.setMouseTracking(True)  # Enable mouse tracking to update cursor on hover
@@ -96,7 +81,7 @@ class PDFViewLabel(QLabel):
             return None
 
         rect = annotation.get_rect(self.zoom_level)
-        edge_threshold = 10  # pixels from edge to trigger resize
+        edge_threshold = EDGE_RESIZE_THRESHOLD
 
         # Check each edge
         if abs(x - rect.left()) < edge_threshold and rect.top() <= y <= rect.bottom():
@@ -145,23 +130,23 @@ class PDFViewLabel(QLabel):
 
             if self.resize_edge == ResizeEdge.RIGHT:
                 new_width = self.resizing_annotation.width + dx / zoom_ratio
-                if new_width > 10:  # Minimum width
+                if new_width > MIN_ANNOTATION_SIZE:
                     self.resizing_annotation.width = new_width
                     self.resize_start_pos = QPoint(event.x(), event.y())
             elif self.resize_edge == ResizeEdge.LEFT:
                 new_width = self.resizing_annotation.width - dx / zoom_ratio
-                if new_width > 10:
+                if new_width > MIN_ANNOTATION_SIZE:
                     self.resizing_annotation.x += dx / zoom_ratio
                     self.resizing_annotation.width = new_width
                     self.resize_start_pos = QPoint(event.x(), event.y())
             elif self.resize_edge == ResizeEdge.BOTTOM:
                 new_height = self.resizing_annotation.height + dy / zoom_ratio
-                if new_height > 10:  # Minimum height
+                if new_height > MIN_ANNOTATION_SIZE:
                     self.resizing_annotation.height = new_height
                     self.resize_start_pos = QPoint(event.x(), event.y())
             elif self.resize_edge == ResizeEdge.TOP:
                 new_height = self.resizing_annotation.height - dy / zoom_ratio
-                if new_height > 10:
+                if new_height > MIN_ANNOTATION_SIZE:
                     self.resizing_annotation.y += dy / zoom_ratio
                     self.resizing_annotation.height = new_height
                     self.resize_start_pos = QPoint(event.x(), event.y())

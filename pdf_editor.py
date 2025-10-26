@@ -4,25 +4,24 @@ A simple PDF viewer and editor application built with PyQt5 and PyMuPDF.
 """
 
 import sys
-from enum import Enum
 from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QFileDialog,
                              QAction, QScrollArea, QPushButton,
                              QVBoxLayout, QHBoxLayout, QWidget, QDialog, QSlider)
 from PyQt5.QtGui import QFont, QKeySequence
 from PyQt5.QtCore import Qt
 
-from dialogs import TextFormatDialog, DoodleDialog
+from core.enums import EditMode
+from core.constants import (BASE_SCALE, MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM,
+                             ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX, ZOOM_SLIDER_DEFAULT,
+                             ZOOM_SLIDER_TICK_INTERVAL, ZOOM_SLIDER_WIDTH,
+                             WINDOW_MARGIN, DECORATION_HEIGHT, DECORATION_WIDTH,
+                             MIN_BUTTON_HEIGHT, BUTTON_HEIGHT_PADDING,
+                             DEFAULT_MENUBAR_HEIGHT)
+from core.config import Config
+from ui.dialogs import TextFormatDialog, DoodleDialog
 from models import TextAnnotation, ImageAnnotation, DoodleAnnotation
-from widgets import PDFViewLabel
-from pdf_operations import PDFOperations
-from window_manager import WindowManager
-
-
-class EditMode(Enum):
-    """Editing modes for the PDF editor"""
-    TEXT = "text"
-    IMAGE = "image"
-    DOODLE = "doodle"
+from ui.widgets import PDFViewLabel
+from operations import PDFOperations, WindowManager
 
 
 class PDFEditor(QMainWindow, PDFOperations, WindowManager):
@@ -31,13 +30,13 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PDF Editor")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(*Config.get_default_window_geometry())
 
         # Initialize state
         self.doc = None
         self.current_page = 0
         self.draft_annotations = []
-        self.zoom_level = 1.0
+        self.zoom_level = DEFAULT_ZOOM
         self.current_mode = EditMode.TEXT  # Default mode
 
         # Setup UI
@@ -93,12 +92,12 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         # Zoom controls
         button_layout.addWidget(QLabel("Zoom:"))
         self.zoom_slider = QSlider(Qt.Horizontal)
-        self.zoom_slider.setMinimum(25)
-        self.zoom_slider.setMaximum(400)
-        self.zoom_slider.setValue(100)
+        self.zoom_slider.setMinimum(ZOOM_SLIDER_MIN)
+        self.zoom_slider.setMaximum(ZOOM_SLIDER_MAX)
+        self.zoom_slider.setValue(ZOOM_SLIDER_DEFAULT)
         self.zoom_slider.setTickPosition(QSlider.TicksBelow)
-        self.zoom_slider.setTickInterval(25)
-        self.zoom_slider.setMaximumWidth(200)
+        self.zoom_slider.setTickInterval(ZOOM_SLIDER_TICK_INTERVAL)
+        self.zoom_slider.setMaximumWidth(ZOOM_SLIDER_WIDTH)
         self.zoom_slider.valueChanged.connect(self.on_zoom_changed)
         button_layout.addWidget(self.zoom_slider)
 
@@ -177,7 +176,7 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
     # PDF Operations
     def open_pdf(self):
         """Open a PDF file"""
-        path, _ = QFileDialog.getOpenFileName(self, "Open PDF", "", "PDF Files (*.pdf)")
+        path, _ = QFileDialog.getOpenFileName(self, "Open PDF", "", Config.SUPPORTED_PDF_FORMATS)
         if not path:
             return
 
@@ -199,7 +198,7 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         page = self.doc[page_num]
 
         # Render page at current zoom
-        zoom_factor = 2.0 * self.zoom_level
+        zoom_factor = BASE_SCALE * self.zoom_level
         pixmap = self.render_page(page, zoom_factor)
 
         self.label.setPixmap(pixmap)
@@ -215,7 +214,7 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         if not self.doc or not self.draft_annotations:
             return
 
-        path, _ = QFileDialog.getSaveFileName(self, "Save PDF", "edited.pdf", "PDF Files (*.pdf)")
+        path, _ = QFileDialog.getSaveFileName(self, "Save PDF", Config.DEFAULT_SAVE_FILENAME, Config.SUPPORTED_PDF_FORMATS)
         if not path:
             return
 
@@ -274,10 +273,10 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         pdf_width = self.label.pixmap().width()
         pdf_height = self.label.pixmap().height()
 
-        menubar_height = self.menuBar().height() if self.menuBar().height() > 0 else 25
-        toolbar_height = self.toolbar.height() if self.toolbar.height() > 0 else 40
+        menubar_height = self.menuBar().height() if self.menuBar().height() > 0 else DEFAULT_MENUBAR_HEIGHT
+        toolbar_height = self.toolbar.height() if self.toolbar.height() > 0 else DECORATION_HEIGHT
         self.prev_button.adjustSize()
-        button_height = max(self.prev_button.height(), 40) + 10
+        button_height = max(self.prev_button.height(), MIN_BUTTON_HEIGHT) + BUTTON_HEIGHT_PADDING
 
         # Calculate optimal size using WindowManager mixin
         width, height = self.calculate_window_size(
@@ -333,7 +332,7 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
             self,
             "Select Image",
             "",
-            "Image Files (*.png *.jpg *.jpeg *.bmp *.gif)"
+            Config.SUPPORTED_IMAGE_FORMATS
         )
 
         if image_path:
@@ -389,10 +388,3 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.draft_annotations.append(annotation)
         self.label.annotations.append(annotation)
         self.label.update()
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = PDFEditor()
-    window.show()
-    sys.exit(app.exec_())

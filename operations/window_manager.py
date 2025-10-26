@@ -3,6 +3,7 @@ Window sizing and positioning utilities
 """
 
 from PyQt5.QtWidgets import QApplication
+from core.constants import WINDOW_MARGIN, DECORATION_HEIGHT, DECORATION_WIDTH
 
 
 class WindowManager:
@@ -26,29 +27,26 @@ class WindowManager:
         screen_width = screen.width()
         screen_height = screen.height()
 
-        decoration_height = 40  # window title bar
-        decoration_width = 20   # window borders
-
         # Maximum window height MUST fit buttons on screen
-        max_window_height = screen_height - 50  # 50px margin from screen edge
+        max_window_height = screen_height - WINDOW_MARGIN
 
         # Height available for PDF scroll area
-        max_pdf_display_height = max_window_height - menubar_height - button_height - decoration_height
+        max_pdf_display_height = max_window_height - menubar_height - button_height - DECORATION_HEIGHT
 
         # Calculate desired window dimensions
-        desired_width = min(pdf_width + decoration_width, screen_width - 50)
+        desired_width = min(pdf_width + DECORATION_WIDTH, screen_width - WINDOW_MARGIN)
 
         # Height: ensure buttons are always visible
         if pdf_height <= max_pdf_display_height:
             # PDF fits in available space - size window to PDF
-            desired_height = pdf_height + menubar_height + button_height + decoration_height
+            desired_height = pdf_height + menubar_height + button_height + DECORATION_HEIGHT
         else:
             # PDF is too large - size window to maximum that keeps buttons visible
             desired_height = max_window_height
 
         # Final safety check
         desired_height = min(desired_height, max_window_height)
-        desired_width = min(desired_width, screen_width - 50)
+        desired_width = min(desired_width, screen_width - WINDOW_MARGIN)
 
         return int(desired_width), int(desired_height)
 
