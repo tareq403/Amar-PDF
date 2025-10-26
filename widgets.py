@@ -16,6 +16,7 @@ class PDFViewLabel(QLabel):
         self.annotations = []
         self.dragging_annotation = None
         self.drag_offset = QPoint(0, 0)
+        self.zoom_level = 1.0  # Default zoom level
 
     def paintEvent(self, event):
         super().paintEvent(event)
@@ -26,16 +27,16 @@ class PDFViewLabel(QLabel):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Draw each draft annotation
+        # Draw each draft annotation with zoom level
         for annotation in self.annotations:
             # Draw dashed border
             pen = QPen(Qt.blue, 2, Qt.DashLine)
             painter.setPen(pen)
-            rect = annotation.get_rect()
+            rect = annotation.get_rect(self.zoom_level)
             painter.drawRect(rect)
 
-            # Draw text with formatting
-            font = annotation.get_qfont()
+            # Draw text with formatting at zoom level
+            font = annotation.get_qfont(self.zoom_level)
             painter.setFont(font)
             pen = QPen(Qt.black)
             painter.setPen(pen)
@@ -46,9 +47,13 @@ class PDFViewLabel(QLabel):
     def mousePressEvent(self, event):
         # Check if clicking on existing annotation
         for annotation in self.annotations:
-            if annotation.contains_point(event.x(), event.y()):
+            if annotation.contains_point(event.x(), event.y(), self.zoom_level):
                 self.dragging_annotation = annotation
-                self.drag_offset = QPoint(event.x() - int(annotation.x), event.y() - int(annotation.y))
+                # Calculate scaled position for drag offset
+                zoom_ratio = self.zoom_level / annotation.created_at_zoom
+                scaled_x = annotation.x * zoom_ratio
+                scaled_y = annotation.y * zoom_ratio
+                self.drag_offset = QPoint(event.x() - int(scaled_x), event.y() - int(scaled_y))
                 event.accept()
                 return
 
@@ -57,8 +62,12 @@ class PDFViewLabel(QLabel):
 
     def mouseMoveEvent(self, event):
         if self.dragging_annotation:
-            self.dragging_annotation.x = event.x() - self.drag_offset.x()
-            self.dragging_annotation.y = event.y() - self.drag_offset.y()
+            # Update position in the original zoom space
+            zoom_ratio = self.zoom_level / self.dragging_annotation.created_at_zoom
+            new_x = (event.x() - self.drag_offset.x()) / zoom_ratio
+            new_y = (event.y() - self.drag_offset.y()) / zoom_ratio
+            self.dragging_annotation.x = new_x
+            self.dragging_annotation.y = new_y
             self.update()
             event.accept()
         else:
@@ -74,7 +83,7 @@ class PDFViewLabel(QLabel):
     def mouseDoubleClickEvent(self, event):
         # Check if double-clicking on existing annotation to edit
         for annotation in self.annotations:
-            if annotation.contains_point(event.x(), event.y()):
+            if annotation.contains_point(event.x(), event.y(), self.zoom_level):
                 dialog = TextFormatDialog(
                     self,
                     initial_text=annotation.text,
