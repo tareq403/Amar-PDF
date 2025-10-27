@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QFileDialog,
                              QAction, QScrollArea, QPushButton,
                              QVBoxLayout, QHBoxLayout, QWidget, QDialog, QSlider,
                              QMessageBox)
-from PyQt5.QtGui import QFont, QKeySequence
+from PyQt5.QtGui import QFont, QKeySequence, QIcon
 from PyQt5.QtCore import Qt
 
 from core.enums import EditMode
@@ -86,14 +86,17 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         button_layout = QHBoxLayout()
 
         # Previous button
-        self.prev_button = QPushButton("Previous Page")
+        self.prev_button = QPushButton("<")
+        self.prev_button.setToolTip("Previous Page")
         self.prev_button.clicked.connect(self.prev_page)
         self.prev_button.setEnabled(False)
+        self.prev_button.setMaximumWidth(40)
         button_layout.addWidget(self.prev_button)
 
         # Zoom controls
         button_layout.addWidget(QLabel("Zoom:"))
         self.zoom_slider = QSlider(Qt.Horizontal)
+        self.zoom_slider.setToolTip("Adjust zoom level (25% - 400%)")
         self.zoom_slider.setMinimum(ZOOM_SLIDER_MIN)
         self.zoom_slider.setMaximum(ZOOM_SLIDER_MAX)
         self.zoom_slider.setValue(ZOOM_SLIDER_DEFAULT)
@@ -108,13 +111,16 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         button_layout.addWidget(self.zoom_label)
 
         # Next button
-        self.next_button = QPushButton("Next Page")
+        self.next_button = QPushButton(">")
+        self.next_button.setToolTip("Next Page")
         self.next_button.clicked.connect(self.next_page)
         self.next_button.setEnabled(False)
+        self.next_button.setMaximumWidth(40)
         button_layout.addWidget(self.next_button)
 
         # See All Pages button
         self.all_pages_button = QPushButton("See All Pages")
+        self.all_pages_button.setToolTip("View all pages - Reorder and delete pages")
         self.all_pages_button.clicked.connect(self.show_all_pages)
         self.all_pages_button.setEnabled(False)
         button_layout.addWidget(self.all_pages_button)
@@ -140,34 +146,40 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         """Setup the toolbar"""
         toolbar = self.addToolBar("Main Toolbar")
         toolbar.setMovable(False)
+        toolbar.setToolButtonStyle(Qt.ToolButtonIconOnly)
 
         # Save PDF button
-        save_pdf_action = QAction("Save PDF", self)
+        save_pdf_action = QAction(QIcon.fromTheme("document-save", QIcon()), "💾", self)
+        save_pdf_action.setToolTip("Save PDF with annotations (Cmd+S / Ctrl+S)")
         save_pdf_action.triggered.connect(self.save_pdf)
         toolbar.addAction(save_pdf_action)
 
         # Merge PDF button
-        merge_pdf_action = QAction("Merge PDF", self)
+        merge_pdf_action = QAction(QIcon.fromTheme("document-merge", QIcon()), "🔗", self)
+        merge_pdf_action.setToolTip("Merge another PDF into this document")
         merge_pdf_action.triggered.connect(self.merge_pdf)
         toolbar.addAction(merge_pdf_action)
 
         toolbar.addSeparator()
 
         # Add Text button (checkable for mode selection)
-        self.add_text_action = QAction("Add Text", self)
+        self.add_text_action = QAction(QIcon.fromTheme("format-text", QIcon()), "T", self)
+        self.add_text_action.setToolTip("Text Mode - Click to add text annotations")
         self.add_text_action.setCheckable(True)
         self.add_text_action.setChecked(True)  # Default mode
         self.add_text_action.triggered.connect(lambda: self.set_mode(EditMode.TEXT))
         toolbar.addAction(self.add_text_action)
 
         # Add Image button (checkable for mode selection)
-        self.add_image_action = QAction("Add Image", self)
+        self.add_image_action = QAction(QIcon.fromTheme("insert-image", QIcon()), "🖼️", self)
+        self.add_image_action.setToolTip("Image Mode - Click to add images to PDF")
         self.add_image_action.setCheckable(True)
         self.add_image_action.triggered.connect(lambda: self.set_mode(EditMode.IMAGE))
         toolbar.addAction(self.add_image_action)
 
         # Add Doodle button (checkable for mode selection)
-        self.add_doodle_action = QAction("Add Doodle", self)
+        self.add_doodle_action = QAction(QIcon.fromTheme("draw-freehand", QIcon()), "✏️", self)
+        self.add_doodle_action.setToolTip("Doodle Mode - Click to draw on PDF")
         self.add_doodle_action.setCheckable(True)
         self.add_doodle_action.triggered.connect(lambda: self.set_mode(EditMode.DOODLE))
         toolbar.addAction(self.add_doodle_action)
