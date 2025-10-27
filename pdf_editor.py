@@ -6,7 +6,8 @@ A simple PDF viewer and editor application built with PyQt5 and PyMuPDF.
 import sys
 from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QFileDialog,
                              QAction, QScrollArea, QPushButton,
-                             QVBoxLayout, QHBoxLayout, QWidget, QDialog, QSlider)
+                             QVBoxLayout, QHBoxLayout, QWidget, QDialog, QSlider,
+                             QMessageBox)
 from PyQt5.QtGui import QFont, QKeySequence
 from PyQt5.QtCore import Qt
 
@@ -145,6 +146,11 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         save_pdf_action.triggered.connect(self.save_pdf)
         toolbar.addAction(save_pdf_action)
 
+        # Merge PDF button
+        merge_pdf_action = QAction("Merge PDF", self)
+        merge_pdf_action.triggered.connect(self.merge_pdf)
+        toolbar.addAction(merge_pdf_action)
+
         toolbar.addSeparator()
 
         # Add Text button (checkable for mode selection)
@@ -236,6 +242,59 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.label.annotations = []
         self.doc = self.open_pdf_file(path)
         self.show_page(self.current_page)
+
+    def merge_pdf(self):
+        """Merge another PDF file into the current document"""
+        if not self.doc:
+            return
+
+        # Open file dialog to select PDF to merge
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select PDF to Merge",
+            "",
+            Config.SUPPORTED_PDF_FORMATS
+        )
+        if not path:
+            return
+
+        try:
+            # Open the PDF to merge
+            merge_doc = self.open_pdf_file(path)
+
+            # Store the current page count (where new pages will be inserted)
+            original_page_count = len(self.doc)
+
+            # Insert all pages from the merge document
+            self.doc.insert_pdf(merge_doc)
+
+            # Close the merge document
+            merge_doc.close()
+
+            # Update navigation buttons
+            self.update_buttons()
+
+            # Refresh current page display
+            self.show_page(self.current_page)
+
+            # Show success message
+            QMessageBox.information(
+                self,
+                "Merge Successful",
+                f"Successfully merged PDF.\n\n"
+                f"Original pages: {original_page_count}\n"
+                f"Added pages: {len(self.doc) - original_page_count}\n"
+                f"Total pages: {len(self.doc)}",
+                QMessageBox.Ok
+            )
+
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                "Merge Failed",
+                f"Failed to merge PDF: {str(e)}",
+                QMessageBox.Ok
+            )
 
     # Navigation
     def prev_page(self):

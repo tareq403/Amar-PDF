@@ -47,6 +47,12 @@ A professional PDF viewer and editor application built with PyQt5 and PyMuPDF (f
 - **Preview Mode**: Changes are not applied until confirmed
 - **Smart Annotation Tracking**: Annotations move with their pages
 - **Cancel/Confirm**: Discard or apply page operations
+- **PDF Merging**: Merge multiple PDF files into one document
+
+### File Operations
+- **Open PDF**: Load PDF files for viewing and editing
+- **Save PDF**: Export with all annotations permanently applied
+- **Merge PDF**: Combine multiple PDF files seamlessly
 
 ### Keyboard Shortcuts
 - **Cmd+O / Ctrl+O**: Open PDF
@@ -108,40 +114,40 @@ PdfEditor/
 ### core/
 **Framework-level code and configuration**
 
-- **constants.py** (52 lines): All application constants
+- **constants.py**: All application constants
   - Rendering scales, zoom levels
   - UI dimensions and thresholds
   - Font defaults and ranges
   - Canvas and pen settings
 
-- **config.py** (30 lines): Runtime configuration
+- **config.py**: Runtime configuration
   - Window geometry defaults
   - File format filters
   - Debug settings
 
-- **enums.py** (21 lines): Type-safe enumerations
+- **enums.py**: Type-safe enumerations
   - `EditMode`: TEXT, IMAGE, DOODLE
   - `ResizeEdge`: LEFT, RIGHT, TOP, BOTTOM
 
 ### models/
 **Data models with zoom-aware coordinate management**
 
-- **annotation.py** (37 lines): Abstract base class
+- **annotation.py**: Abstract base class
   - Common zoom calculation helpers
   - Point containment checking
   - Scaled position calculation
 
-- **text_annotation.py** (55 lines): Text annotation model
+- **text_annotation.py**: Text annotation model
   - Font formatting support
   - Dynamic bounding box calculation
   - QFont integration
 
-- **image_annotation.py** (44 lines): Image annotation model
+- **image_annotation.py**: Image annotation model
   - Image loading and caching
   - Resize support
   - Pixmap scaling
 
-- **doodle_annotation.py** (105 lines): Doodle annotation model
+- **doodle_annotation.py**: Doodle annotation model
   - Stroke data management
   - Pixmap generation from strokes
   - Bounding box calculation
@@ -149,31 +155,31 @@ PdfEditor/
 ### ui/
 **User interface components**
 
-- **dialogs/text_format_dialog.py** (81 lines): Text input dialog
+- **dialogs/text_format_dialog.py**: Text input dialog
   - Font family combo box
   - Size spinner (6-72pt)
   - Style checkboxes (bold, italic, underline, strikethrough)
 
-- **dialogs/doodle_dialog.py** (145 lines): Drawing dialog
+- **dialogs/doodle_dialog.py**: Drawing dialog
   - DrawingCanvas widget with mouse tracking
   - Color picker integration
   - Pen width control (1-20px)
   - Clear canvas function
 
-- **widgets/pdf_view_label.py** (259 lines): Main PDF display widget
+- **widgets/pdf_view_label.py**: Main PDF display widget
   - Annotation rendering with dashed borders
   - Drag-and-drop support for all annotation types
   - Resize handles for images/doodles
   - Mode-aware cursor changes
   - Double-click text editing
 
-- **widgets/page_widget.py** (136 lines): Draggable page widget
+- **widgets/page_widget.py**: Draggable page widget
   - Visual page representation with thumbnail
   - Drag-and-drop page reordering
   - Selection highlighting
   - Delete button integration
 
-- **windows/all_pages_window.py** (273 lines): All pages overview window
+- **windows/all_pages_window.py**: All pages overview window
   - Vertical page layout at 10% zoom
   - Non-destructive preview mode
   - Page mapping system for tracking changes
@@ -183,13 +189,13 @@ PdfEditor/
 ### operations/
 **Business logic operations**
 
-- **pdf_operations.py** (134 lines): PDF file operations (Mixin)
+- **pdf_operations.py**: PDF file operations (Mixin)
   - Open PDF documents with PyMuPDF
   - Render pages at zoom levels
   - Save annotations to PDF with coordinate conversion
   - Font mapping for PDF compatibility
 
-- **window_manager.py** (62 lines): Window management (Mixin)
+- **window_manager.py**: Window management (Mixin)
   - Calculate optimal window size
   - Center window on screen
   - Multi-monitor support
@@ -204,17 +210,18 @@ PdfEditor/
 
 ### Application Files
 
-- **main.py** (21 lines): Clean entry point
+- **main.py**: Clean entry point
   - Application initialization
   - Main event loop
 
-- **pdf_editor.py** (408 lines): Main window class
+- **pdf_editor.py**: Main window class
   - Inherits from QMainWindow, PDFOperations, WindowManager
   - UI setup (menubar, toolbar, scroll area, navigation)
   - Mode management
   - Event handling
   - Annotation creation and management
   - All pages window integration
+  - PDF merging functionality
 
 ## Architecture
 
@@ -333,12 +340,23 @@ python main.py
    - Annotations automatically move with their pages
    - Annotations on deleted pages are removed
 
-### 8. Editing Annotations
+### 8. Merging PDFs
+1. Open a PDF document
+2. Click **Merge PDF** button in toolbar
+3. Select the PDF file to merge
+4. The selected PDF's pages are appended to the current document
+5. A success dialog shows:
+   - Original page count
+   - Number of pages added
+   - Total pages after merge
+6. All existing annotations remain on their original pages
+
+### 9. Editing Annotations
 - **Reposition**: Drag annotation to new location
 - **Resize** (Images/Doodles): Drag edges or corners
 - **Edit Text**: Double-click text annotation
 
-### 9. Saving the PDF
+### 10. Saving the PDF
 - Use **File → Save** (Cmd+S / Ctrl+S)
 - Choose save location
 - All annotations are permanently applied to PDF
@@ -413,19 +431,26 @@ python test_imports.py
 - Use type hints where appropriate
 - Add docstrings to all public methods
 
-## File Size Summary
+## Project Statistics
 
-| Component | Files | Total Lines |
-|-----------|-------|-------------|
-| core/ | 4 | 103 |
-| models/ | 5 | 241 |
-| ui/dialogs/ | 3 | 226 |
-| ui/widgets/ | 3 | 545 |
-| ui/windows/ | 2 | 281 |
-| operations/ | 3 | 196 |
-| utils/ | 2 | ~60 |
-| main files | 2 | 412 |
-| **Total** | **24** | **~2,064** |
+| Component | Files |
+|-----------|-------|
+| core/ | 4 |
+| models/ | 5 |
+| ui/dialogs/ | 3 |
+| ui/widgets/ | 3 |
+| ui/windows/ | 2 |
+| operations/ | 3 |
+| utils/ | 2 |
+| main files | 2 |
+| **Total** | **24** |
+
+**Key Features:**
+- Multi-mode editing (Text, Image, Doodle)
+- Page management (Reorder, Delete, Merge)
+- Advanced annotations with zoom-aware positioning
+- Non-destructive preview for page operations
+- Comprehensive error handling and user feedback
 
 ## License
 
