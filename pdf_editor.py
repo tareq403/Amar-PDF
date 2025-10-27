@@ -19,6 +19,7 @@ from core.constants import (BASE_SCALE, MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM,
                              DEFAULT_MENUBAR_HEIGHT)
 from core.config import Config
 from ui.dialogs import TextFormatDialog, DoodleDialog
+from ui import AllPagesWindow
 from models import TextAnnotation, ImageAnnotation, DoodleAnnotation
 from ui.widgets import PDFViewLabel
 from operations import PDFOperations, WindowManager
@@ -110,6 +111,12 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.next_button.clicked.connect(self.next_page)
         self.next_button.setEnabled(False)
         button_layout.addWidget(self.next_button)
+
+        # See All Pages button
+        self.all_pages_button = QPushButton("See All Pages")
+        self.all_pages_button.clicked.connect(self.show_all_pages)
+        self.all_pages_button.setEnabled(False)
+        button_layout.addWidget(self.all_pages_button)
 
         main_layout.addLayout(button_layout, 0)  # stretch factor 0 - fixed size
 
@@ -250,10 +257,12 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         if not self.doc:
             self.prev_button.setEnabled(False)
             self.next_button.setEnabled(False)
+            self.all_pages_button.setEnabled(False)
             return
 
         self.prev_button.setEnabled(self.current_page > 0)
         self.next_button.setEnabled(self.current_page < len(self.doc) - 1)
+        self.all_pages_button.setEnabled(True)
 
     # Zoom Operations
     def on_zoom_changed(self, value):
@@ -388,3 +397,12 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.draft_annotations.append(annotation)
         self.label.annotations.append(annotation)
         self.label.update()
+
+    def show_all_pages(self):
+        """Open a new window showing all pages of the PDF"""
+        if not self.doc:
+            return
+
+        # Create and show the all pages window
+        all_pages_window = AllPagesWindow(self.doc, self)
+        all_pages_window.show()

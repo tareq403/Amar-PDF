@@ -40,6 +40,14 @@ A professional PDF viewer and editor application built with PyQt5 and PyMuPDF (f
 - **Resize Support**: Resize doodles after placing them on PDF
 - **Clear Function**: Start over if needed before applying
 
+### Page Management
+- **All Pages View**: Overview of all pages in vertical layout
+- **Drag & Drop Reordering**: Drag pages to reorder the document
+- **Page Deletion**: Delete unwanted pages with confirmation
+- **Preview Mode**: Changes are not applied until confirmed
+- **Smart Annotation Tracking**: Annotations move with their pages
+- **Cancel/Confirm**: Discard or apply page operations
+
 ### Keyboard Shortcuts
 - **Cmd+O / Ctrl+O**: Open PDF
 - **Cmd+S / Ctrl+S**: Save PDF with annotations
@@ -73,9 +81,13 @@ PdfEditor/
 │   │   ├── __init__.py
 │   │   ├── text_format_dialog.py
 │   │   └── doodle_dialog.py
-│   └── widgets/                  # Custom widgets
+│   ├── widgets/                  # Custom widgets
+│   │   ├── __init__.py
+│   │   ├── pdf_view_label.py
+│   │   └── page_widget.py
+│   └── windows/                  # Window classes
 │       ├── __init__.py
-│       └── pdf_view_label.py
+│       └── all_pages_window.py
 │
 ├── operations/                    # Business logic
 │   ├── __init__.py
@@ -155,6 +167,19 @@ PdfEditor/
   - Mode-aware cursor changes
   - Double-click text editing
 
+- **widgets/page_widget.py** (136 lines): Draggable page widget
+  - Visual page representation with thumbnail
+  - Drag-and-drop page reordering
+  - Selection highlighting
+  - Delete button integration
+
+- **windows/all_pages_window.py** (273 lines): All pages overview window
+  - Vertical page layout at 10% zoom
+  - Non-destructive preview mode
+  - Page mapping system for tracking changes
+  - Cancel/Confirm buttons
+  - Annotation migration on page operations
+
 ### operations/
 **Business logic operations**
 
@@ -183,12 +208,13 @@ PdfEditor/
   - Application initialization
   - Main event loop
 
-- **pdf_editor.py** (391 lines): Main window class
+- **pdf_editor.py** (408 lines): Main window class
   - Inherits from QMainWindow, PDFOperations, WindowManager
   - UI setup (menubar, toolbar, scroll area, navigation)
   - Mode management
   - Event handling
   - Annotation creation and management
+  - All pages window integration
 
 ## Architecture
 
@@ -292,12 +318,27 @@ python main.py
 5. **Drag edges** to resize
 6. **Drag center** to reposition
 
-### 7. Editing Annotations
+### 7. Managing Pages
+1. Click **See All Pages** button at bottom of window
+2. In the All Pages window:
+   - **View**: All pages displayed vertically at 10% zoom
+   - **Reorder**: Drag and drop pages to new positions
+   - **Delete**: Click red "Delete" button on any page
+   - **Select**: Click a page to highlight it
+3. Page operations:
+   - **Cancel**: Discard all changes and close window
+   - **Confirm**: Apply all changes to the document
+4. After confirmation:
+   - Document reloaded with new page order
+   - Annotations automatically move with their pages
+   - Annotations on deleted pages are removed
+
+### 8. Editing Annotations
 - **Reposition**: Drag annotation to new location
 - **Resize** (Images/Doodles): Drag edges or corners
 - **Edit Text**: Double-click text annotation
 
-### 8. Saving the PDF
+### 9. Saving the PDF
 - Use **File → Save** (Cmd+S / Ctrl+S)
 - Choose save location
 - All annotations are permanently applied to PDF
@@ -378,11 +419,13 @@ python test_imports.py
 |-----------|-------|-------------|
 | core/ | 4 | 103 |
 | models/ | 5 | 241 |
-| ui/ | 5 | 485 |
+| ui/dialogs/ | 3 | 226 |
+| ui/widgets/ | 3 | 545 |
+| ui/windows/ | 2 | 281 |
 | operations/ | 3 | 196 |
 | utils/ | 2 | ~60 |
 | main files | 2 | 412 |
-| **Total** | **21** | **~1,497** |
+| **Total** | **24** | **~2,064** |
 
 ## License
 

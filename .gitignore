@@ -1,4 +1,37 @@
+# IDE
 .idea
+.vscode
+*.swp
+*.swo
+
+# Claude Code
 .claude
-__pycache__
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Markdown files (except README.md)
+*.md
+!README.md
+
+# PDF output files
 edited.pdf
+
+# Temporary files
+*.tmp
+*.temp
