@@ -146,6 +146,10 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         save_action.triggered.connect(self.save_pdf)
         file_menu.addAction(save_action)
 
+        link_pdf_action = QAction("Link another PDF", self)
+        link_pdf_action.triggered.connect(self.merge_pdf)
+        file_menu.addAction(link_pdf_action)
+
     def _setup_toolbar(self):
         """Setup the toolbar"""
         toolbar = self.addToolBar("Main Toolbar")
