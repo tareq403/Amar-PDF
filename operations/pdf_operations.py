@@ -69,26 +69,65 @@ class PDFOperations:
                     'Courier New': 'Courier',
                     'Arial': 'Helvetica'
                 }
-                fontname = font_map.get(fontname, fontname)
+                base_fontname = font_map.get(fontname, fontname)
 
-                # Add bold/italic modifiers
-                if annotation.bold and annotation.italic:
-                    fontname += '-BoldItalic'
-                elif annotation.bold:
-                    fontname += '-Bold'
-                elif annotation.italic:
-                    fontname += '-Italic'
+                # Try to insert text with formatting
+                text_inserted = False
 
-                # Insert text with formatting
-                try:
-                    page.insert_text(
-                        (pdf_x, pdf_y),
-                        annotation.text,
-                        fontsize=annotation.font_size,
-                        fontname=fontname,
-                        color=(0, 0, 0)
-                    )
+                # Attempt 1: Try with bold/italic modifiers
+                if annotation.bold or annotation.italic:
+                    styled_fontname = base_fontname
+                    if annotation.bold and annotation.italic:
+                        styled_fontname += '-BoldItalic'
+                    elif annotation.bold:
+                        styled_fontname += '-Bold'
+                    elif annotation.italic:
+                        styled_fontname += '-Italic'
 
+                    try:
+                        page.insert_text(
+                            (pdf_x, pdf_y),
+                            annotation.text,
+                            fontsize=annotation.font_size,
+                            fontname=styled_fontname,
+                            color=(0, 0, 0)
+                        )
+                        text_inserted = True
+                    except Exception as e:
+                        # Font with modifiers not available, will try base font
+                        pass
+
+                # Attempt 2: Try base font without modifiers
+                if not text_inserted:
+                    try:
+                        page.insert_text(
+                            (pdf_x, pdf_y),
+                            annotation.text,
+                            fontsize=annotation.font_size,
+                            fontname=base_fontname,
+                            color=(0, 0, 0)
+                        )
+                        text_inserted = True
+                    except Exception as e:
+                        # Base font not available, will try default
+                        pass
+
+                # Attempt 3: Fallback to Helvetica (always available)
+                if not text_inserted:
+                    try:
+                        page.insert_text(
+                            (pdf_x, pdf_y),
+                            annotation.text,
+                            fontsize=annotation.font_size,
+                            fontname='Helvetica',
+                            color=(0, 0, 0)
+                        )
+                        text_inserted = True
+                    except Exception as e:
+                        print(f"Failed to insert text annotation: {e}")
+
+                # Add underline and strikethrough (always drawn, regardless of font)
+                if text_inserted:
                     # Calculate text width for underline/strikethrough
                     # Use the actual font metrics from Qt (divided by base scale for PDF coordinates)
                     text_width = annotation.width / BASE_SCALE
@@ -96,22 +135,28 @@ class PDFOperations:
                     # Add underline if needed
                     if annotation.underline:
                         underline_y = pdf_y + 1.5
-                        page.draw_line((pdf_x, underline_y), (pdf_x + text_width - 5, underline_y),
-                                      color=(0, 0, 0), width=0.5)
+                        try:
+                            page.draw_line(
+                                (pdf_x, underline_y),
+                                (pdf_x + text_width - 5, underline_y),
+                                color=(0, 0, 0),
+                                width=0.5
+                            )
+                        except Exception as e:
+                            print(f"Failed to add underline: {e}")
 
                     # Add strikethrough if needed
                     if annotation.strikethrough:
                         strikethrough_y = pdf_y - (annotation.font_size * 0.35)
-                        page.draw_line((pdf_x, strikethrough_y), (pdf_x + text_width - 5, strikethrough_y),
-                                      color=(0, 0, 0), width=0.5)
-                except:
-                    # Fallback to basic font if custom font fails
-                    page.insert_text(
-                        (pdf_x, pdf_y),
-                        annotation.text,
-                        fontsize=annotation.font_size,
-                        color=(0, 0, 0)
-                    )
+                        try:
+                            page.draw_line(
+                                (pdf_x, strikethrough_y),
+                                (pdf_x + text_width - 5, strikethrough_y),
+                                color=(0, 0, 0),
+                                width=0.5
+                            )
+                        except Exception as e:
+                            print(f"Failed to add strikethrough: {e}")
 
             elif isinstance(annotation, ImageAnnotation):
                 # Convert screen coordinates to PDF coordinates
