@@ -41,3 +41,55 @@ class ImageAnnotation(Annotation):
         scaled_width = int(self.width * zoom_ratio)
         scaled_height = int(self.height * zoom_ratio)
         return self.pixmap.scaled(scaled_width, scaled_height)
+
+    @classmethod
+    def from_file(cls, x: float, y: float, image_path: str, page_num: int) -> 'ImageAnnotation':
+        """
+        Create an ImageAnnotation from an image file.
+
+        Convenience factory method that uses the original image dimensions.
+
+        Args:
+            x: X coordinate on the PDF page
+            y: Y coordinate on the PDF page
+            image_path: Path to the image file
+            page_num: Page number (0-indexed)
+
+        Returns:
+            ImageAnnotation instance with original image dimensions
+
+        Raises:
+            ImageLoadError: If the image file cannot be loaded
+
+        Example:
+            >>> annotation = ImageAnnotation.from_file(100, 200, "logo.png", 0)
+        """
+        return cls(x, y, image_path, page_num)
+
+    @classmethod
+    def from_file_with_size(cls, x: float, y: float, image_path: str, page_num: int,
+                           width: int, height: int) -> 'ImageAnnotation':
+        """
+        Create an ImageAnnotation with specific dimensions.
+
+        Factory method for creating image annotations with custom sizing.
+        The image will be scaled to the specified dimensions.
+
+        Args:
+            x: X coordinate on the PDF page
+            y: Y coordinate on the PDF page
+            image_path: Path to the image file
+            page_num: Page number (0-indexed)
+            width: Desired width in pixels
+            height: Desired height in pixels
+
+        Returns:
+            ImageAnnotation instance with specified dimensions
+
+        Raises:
+            ImageLoadError: If the image file cannot be loaded
+
+        Example:
+            >>> annotation = ImageAnnotation.from_file_with_size(100, 200, "logo.png", 0, 150, 100)
+        """
+        return cls(x, y, image_path, page_num, width, height)

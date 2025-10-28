@@ -2,6 +2,7 @@
 Text annotation model
 """
 
+from typing import TYPE_CHECKING
 from PyQt5.QtGui import QFont, QFontMetrics
 from PyQt5.QtCore import QRect
 
@@ -9,6 +10,9 @@ from core.constants import (BASE_SCALE, DEFAULT_FONT, DEFAULT_FONT_SIZE,
                              TEXT_ANNOTATION_WIDTH_PADDING, TEXT_ANNOTATION_HEIGHT_PADDING,
                              TEXT_ANNOTATION_Y_OFFSET)
 from models.annotation import Annotation
+
+if TYPE_CHECKING:
+    from models.text_format import TextFormat
 
 
 class TextAnnotation(Annotation):
@@ -51,3 +55,59 @@ class TextAnnotation(Annotation):
         # Recalculate bounds for current zoom
         self.update_bounds(current_zoom)
         return QRect(int(scaled_x), int(scaled_y - self.height + TEXT_ANNOTATION_Y_OFFSET), int(self.width), int(self.height))
+
+    @classmethod
+    def from_text_format(cls, x: float, y: float, page_num: int, text_format: 'TextFormat') -> 'TextAnnotation':
+        """
+        Create a TextAnnotation from a TextFormat object.
+
+        This factory method provides a convenient way to create text annotations
+        from the TextFormat data model returned by TextFormatDialog.
+
+        Args:
+            x: X coordinate on the PDF page
+            y: Y coordinate on the PDF page
+            page_num: Page number (0-indexed)
+            text_format: TextFormat object containing text and formatting
+
+        Returns:
+            TextAnnotation instance with the specified format
+
+        Example:
+            >>> format = TextFormat(text="Hello", font_family="Arial", font_size=14, bold=True)
+            >>> annotation = TextAnnotation.from_text_format(100, 200, 0, format)
+        """
+        return cls(
+            x=x,
+            y=y,
+            text=text_format.text,
+            page_num=page_num,
+            font_family=text_format.font_family,
+            font_size=text_format.font_size,
+            bold=text_format.bold,
+            italic=text_format.italic,
+            underline=text_format.underline,
+            strikethrough=text_format.strikethrough
+        )
+
+    @classmethod
+    def simple(cls, x: float, y: float, text: str, page_num: int) -> 'TextAnnotation':
+        """
+        Create a simple text annotation with default formatting.
+
+        Convenience factory method for creating text annotations with
+        minimal parameters using default font and styling.
+
+        Args:
+            x: X coordinate on the PDF page
+            y: Y coordinate on the PDF page
+            text: Text content
+            page_num: Page number (0-indexed)
+
+        Returns:
+            TextAnnotation instance with default formatting
+
+        Example:
+            >>> annotation = TextAnnotation.simple(100, 200, "Hello World", 0)
+        """
+        return cls(x, y, text, page_num)

@@ -10,7 +10,7 @@ from PyQt5.QtCore import Qt, QPoint
 from core.enums import EditMode, ResizeEdge
 from core.constants import EDGE_RESIZE_THRESHOLD, MIN_ANNOTATION_SIZE
 from ui.dialogs import TextFormatDialog
-from models import TextAnnotation, ImageAnnotation, DoodleAnnotation
+from models import TextAnnotation, ImageAnnotation, DoodleAnnotation, TextFormat
 
 
 class PDFViewLabel(QLabel):
@@ -216,26 +216,28 @@ class PDFViewLabel(QLabel):
         # Check if double-clicking on existing text annotation to edit
         for annotation in self.annotations:
             if isinstance(annotation, TextAnnotation) and annotation.contains_point(event.x(), event.y(), self.zoom_level):
-                dialog = TextFormatDialog(
-                    self,
-                    initial_text=annotation.text,
-                    initial_font=annotation.font_family,
-                    initial_size=annotation.font_size,
-                    initial_bold=annotation.bold,
-                    initial_italic=annotation.italic,
-                    initial_underline=annotation.underline,
-                    initial_strikethrough=annotation.strikethrough
+                # Create TextFormat from annotation properties
+                initial_format = TextFormat(
+                    text=annotation.text,
+                    font_family=annotation.font_family,
+                    font_size=annotation.font_size,
+                    bold=annotation.bold,
+                    italic=annotation.italic,
+                    underline=annotation.underline,
+                    strikethrough=annotation.strikethrough
                 )
+
+                dialog = TextFormatDialog(self, initial_format=initial_format)
                 if dialog.exec_() == QDialog.Accepted:
-                    values = dialog.get_values()
-                    if values['text']:
-                        annotation.text = values['text']
-                        annotation.font_family = values['font_family']
-                        annotation.font_size = values['font_size']
-                        annotation.bold = values['bold']
-                        annotation.italic = values['italic']
-                        annotation.underline = values['underline']
-                        annotation.strikethrough = values['strikethrough']
+                    text_format = dialog.get_values()
+                    if text_format.is_valid():
+                        annotation.text = text_format.text
+                        annotation.font_family = text_format.font_family
+                        annotation.font_size = text_format.font_size
+                        annotation.bold = text_format.bold
+                        annotation.italic = text_format.italic
+                        annotation.underline = text_format.underline
+                        annotation.strikethrough = text_format.strikethrough
                         annotation.update_bounds()
                         self.update()
                 event.accept()

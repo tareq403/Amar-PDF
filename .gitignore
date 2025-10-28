@@ -35,3 +35,7 @@ edited.pdf
 # Temporary files
 *.tmp
 *.temp
+
+# Application logs
+logs/
+*.log

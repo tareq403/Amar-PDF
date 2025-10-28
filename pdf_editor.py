@@ -11,6 +11,9 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QMainWindow, QFileDialog,
 from PyQt5.QtGui import QFont, QKeySequence, QIcon
 from PyQt5.QtCore import Qt
 
+from typing import Optional, List
+from PyQt5.QtCore import QPoint
+
 from core.enums import EditMode
 from core.constants import (BASE_SCALE, MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM,
                              ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX, ZOOM_SLIDER_DEFAULT,
@@ -21,7 +24,7 @@ from core.constants import (BASE_SCALE, MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM,
 from core.config import Config
 from ui.dialogs import TextFormatDialog, DoodleDialog
 from ui import AllPagesWindow
-from models import TextAnnotation, ImageAnnotation, DoodleAnnotation
+from models import TextAnnotation, ImageAnnotation, DoodleAnnotation, TextFormat, DrawingData
 from ui.widgets import PDFViewLabel
 from operations import PDFOperations, WindowManager
 
@@ -218,8 +221,16 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.update_buttons()
         self.resize_window_to_pdf()
 
-    def show_page(self, page_num):
-        """Display a specific page of the PDF"""
+    def show_page(self, page_num: int) -> None:
+        """
+        Display a specific page of the PDF.
+
+        Renders the page at the current zoom level and updates the display
+        with annotations for this page.
+
+        Args:
+            page_num: Zero-indexed page number to display
+        """
         page = self.doc[page_num]
 
         # Render page at current zoom
@@ -255,8 +266,21 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.doc = self.open_pdf_file(path)
         self.show_page(self.current_page)
 
-    def merge_pdf(self):
-        """Merge another PDF file into the current document"""
+    def merge_pdf(self) -> None:
+        """
+        Merge another PDF file into the current document.
+
+        Opens a file dialog for the user to select a PDF file. All pages
+        from the selected PDF are appended to the current document.
+        Existing annotations are preserved on their original pages.
+
+        The operation shows a success dialog with page count information,
+        or a warning dialog if the merge fails.
+
+        Note:
+            This operation modifies the document in-place. Use Save to
+            persist changes to disk.
+        """
         if not self.doc:
             return
 
@@ -386,26 +410,48 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         elif self.current_mode == EditMode.DOODLE:
             self._handle_doodle_mode_click(label_pos)
 
-    def _handle_text_mode_click(self, label_pos):
-        """Handle mouse click in text mode"""
+    def _is_clicking_annotation(self, label_pos: QPoint) -> bool:
+        """
+        Check if click position is on an existing annotation.
+
+        Args:
+            label_pos: Position of the click in label coordinates
+
+        Returns:
+            True if clicking on an existing annotation, False otherwise
+        """
+        return any(
+            annotation.contains_point(label_pos.x(), label_pos.y(), self.zoom_level)
+            for annotation in self.label.annotations
+        )
+
+    def _handle_text_mode_click(self, label_pos: QPoint) -> None:
+        """
+        Handle mouse click in text mode.
+
+        Args:
+            label_pos: Position of the click in label coordinates
+        """
         # Check if clicking on existing annotation
-        for annotation in self.label.annotations:
-            if annotation.contains_point(label_pos.x(), label_pos.y(), self.zoom_level):
-                return
+        if self._is_clicking_annotation(label_pos):
+            return
 
         # Add new text annotation
         dialog = TextFormatDialog(self)
         if dialog.exec_() == QDialog.Accepted:
-            values = dialog.get_values()
-            if values['text']:
-                self.add_draft_text(label_pos.x(), label_pos.y(), values)
+            text_format = dialog.get_values()
+            self.add_draft_text(label_pos.x(), label_pos.y(), text_format)
 
-    def _handle_image_mode_click(self, label_pos):
-        """Handle mouse click in image mode"""
+    def _handle_image_mode_click(self, label_pos: QPoint) -> None:
+        """
+        Handle mouse click in image mode.
+
+        Args:
+            label_pos: Position of the click in label coordinates
+        """
         # Check if clicking on existing annotation
-        for annotation in self.label.annotations:
-            if annotation.contains_point(label_pos.x(), label_pos.y(), self.zoom_level):
-                return
+        if self._is_clicking_annotation(label_pos):
+            return
 
         # Open file dialog to select image
         image_path, _ = QFileDialog.getOpenFileName(
@@ -418,12 +464,16 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         if image_path:
             self.add_draft_image(label_pos.x(), label_pos.y(), image_path)
 
-    def _handle_doodle_mode_click(self, label_pos):
-        """Handle mouse click in doodle mode"""
+    def _handle_doodle_mode_click(self, label_pos: QPoint) -> None:
+        """
+        Handle mouse click in doodle mode.
+
+        Args:
+            label_pos: Position of the click in label coordinates
+        """
         # Check if clicking on existing annotation
-        for annotation in self.label.annotations:
-            if annotation.contains_point(label_pos.x(), label_pos.y(), self.zoom_level):
-                return
+        if self._is_clicking_annotation(label_pos):
+            return
 
         # Open doodle dialog
         dialog = DoodleDialog(self)
@@ -432,18 +482,25 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
             if drawing_data:
                 self.add_draft_doodle(label_pos.x(), label_pos.y(), drawing_data)
 
-    def add_draft_text(self, x, y, format_values):
-        """Add text annotation in draft mode"""
+    def add_draft_text(self, x: float, y: float, text_format: TextFormat) -> None:
+        """
+        Add text annotation in draft mode.
+
+        Args:
+            x: X coordinate in label space
+            y: Y coordinate in label space
+            text_format: TextFormat object with formatting properties
+        """
         annotation = TextAnnotation(
             x, y,
-            format_values['text'],
+            text_format.text,
             self.current_page,
-            font_family=format_values['font_family'],
-            font_size=format_values['font_size'],
-            bold=format_values['bold'],
-            italic=format_values['italic'],
-            underline=format_values['underline'],
-            strikethrough=format_values['strikethrough']
+            font_family=text_format.font_family,
+            font_size=text_format.font_size,
+            bold=text_format.bold,
+            italic=text_format.italic,
+            underline=text_format.underline,
+            strikethrough=text_format.strikethrough
         )
         annotation.created_at_zoom = self.zoom_level
 
@@ -460,8 +517,19 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.label.annotations.append(annotation)
         self.label.update()
 
-    def add_draft_doodle(self, x, y, drawing_data):
-        """Add doodle annotation in draft mode"""
+    def add_draft_doodle(self, x: float, y: float, drawing_data: DrawingData) -> None:
+        """
+        Add doodle annotation in draft mode.
+
+        Args:
+            x: X coordinate on the PDF page (in PDF coordinates)
+            y: Y coordinate on the PDF page (in PDF coordinates)
+            drawing_data: DrawingData object containing all strokes
+
+        Note:
+            The doodle will be added to the draft annotations list and displayed
+            immediately on the current page.
+        """
         annotation = DoodleAnnotation(x, y, self.current_page, drawing_data)
         annotation.created_at_zoom = self.zoom_level
 

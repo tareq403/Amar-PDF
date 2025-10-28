@@ -9,10 +9,16 @@ from PyQt5.QtCore import Qt, QPoint
 
 from core.constants import (CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_PEN_WIDTH,
                              MIN_PEN_WIDTH, MAX_PEN_WIDTH)
+from models import DrawingData, Stroke
 
 
 class DrawingCanvas(QLabel):
-    """Canvas widget for free-hand drawing"""
+    """
+    Canvas widget for free-hand drawing.
+
+    Allows users to draw strokes with customizable pen color and width.
+    All drawing data is stored using the DrawingData model for type safety.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMinimumSize(CANVAS_WIDTH, CANVAS_HEIGHT)
@@ -20,7 +26,7 @@ class DrawingCanvas(QLabel):
 
         self.drawing = False
         self.current_stroke = []
-        self.strokes = []  # List of stroke dictionaries
+        self.drawing_data = DrawingData()  # Type-safe drawing data
         self.current_pen = QPen(Qt.black, DEFAULT_PEN_WIDTH, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
 
         # Create canvas pixmap
@@ -38,7 +44,7 @@ class DrawingCanvas(QLabel):
 
     def clear_canvas(self):
         """Clear the entire canvas"""
-        self.strokes = []
+        self.drawing_data.clear()
         self.canvas.fill(Qt.white)
         self.setPixmap(self.canvas)
 
@@ -65,24 +71,36 @@ class DrawingCanvas(QLabel):
             self.setPixmap(self.canvas)
 
     def mouseReleaseEvent(self, event):
-        """Finish the current stroke"""
+        """Finish the current stroke and save it"""
         if event.button() == Qt.LeftButton and self.drawing:
             self.drawing = False
             if self.current_stroke:
-                # Save the stroke
-                self.strokes.append({
-                    'points': self.current_stroke.copy(),
-                    'pen': QPen(self.current_pen)  # Copy the pen
-                })
+                # Create a Stroke object from the current stroke
+                stroke = Stroke.from_qpoints(
+                    qpoints=self.current_stroke.copy(),
+                    qcolor=self.current_pen.color(),
+                    width=self.current_pen.width()
+                )
+                self.drawing_data.add_stroke(stroke)
                 self.current_stroke = []
 
-    def get_drawing_data(self):
-        """Return the stroke data"""
-        return self.strokes
+    def get_drawing_data(self) -> DrawingData:
+        """
+        Get the drawing data from the canvas.
+
+        Returns:
+            DrawingData object containing all strokes
+        """
+        return self.drawing_data
 
 
 class DoodleDialog(QDialog):
-    """Dialog for free-hand drawing/doodling"""
+    """
+    Dialog for free-hand drawing/doodling.
+
+    Provides a canvas for drawing with pen color and width controls.
+    Returns type-safe DrawingData on acceptance.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Draw Doodle")
@@ -135,6 +153,11 @@ class DoodleDialog(QDialog):
             self.canvas.set_pen_color(color)
             self.color_button.setStyleSheet(f"background-color: {color.name()};")
 
-    def get_drawing_data(self):
-        """Return the drawing data"""
+    def get_drawing_data(self) -> DrawingData:
+        """
+        Get the drawing data from the dialog.
+
+        Returns:
+            DrawingData object containing all strokes drawn on the canvas
+        """
         return self.canvas.get_drawing_data()
