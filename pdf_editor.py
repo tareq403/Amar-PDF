@@ -246,8 +246,16 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.label.update()
 
     def save_pdf(self):
-        """Save all draft annotations to the PDF file"""
-        if not self.doc or not self.draft_annotations:
+        """
+        Save the PDF file with any modifications.
+
+        This includes:
+        - Draft annotations (if any)
+        - Merged PDFs
+        - Page reordering or deletions
+        - Any other document modifications
+        """
+        if not self.doc:
             return
 
         path, _ = QFileDialog.getSaveFileName(self, "Save PDF", Config.DEFAULT_SAVE_FILENAME, Config.SUPPORTED_PDF_FORMATS)
@@ -258,8 +266,9 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         current_file = self.doc.name if hasattr(self.doc, 'name') else None
         is_same_file = current_file and current_file == path
 
-        # Apply annotations to PDF
-        self.save_pdf_with_annotations(self.doc, self.draft_annotations)
+        # Apply annotations to PDF (if any exist)
+        if self.draft_annotations:
+            self.save_pdf_with_annotations(self.doc, self.draft_annotations)
 
         # Save document
         if is_same_file:
