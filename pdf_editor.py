@@ -20,7 +20,8 @@ from core.constants import (BASE_SCALE, MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM,
                              ZOOM_SLIDER_TICK_INTERVAL, ZOOM_SLIDER_WIDTH,
                              WINDOW_MARGIN, DECORATION_HEIGHT, DECORATION_WIDTH,
                              MIN_BUTTON_HEIGHT, BUTTON_HEIGHT_PADDING,
-                             DEFAULT_MENUBAR_HEIGHT)
+                             DEFAULT_MENUBAR_HEIGHT,
+                             TEXT_MODE_CURSOR, IMAGE_MODE_CURSOR, DOODLE_MODE_CURSOR)
 from core.config import Config
 from ui.dialogs import TextFormatDialog, DoodleDialog
 from ui import AllPagesWindow
@@ -151,6 +152,15 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         toolbar.setMovable(False)
         toolbar.setToolButtonStyle(Qt.ToolButtonIconOnly)
 
+        # Load and apply styling from CSS file
+        import os
+        css_path = os.path.join(os.path.dirname(__file__), 'ui', 'styles', 'toolbar.css')
+        try:
+            with open(css_path, 'r') as f:
+                toolbar.setStyleSheet(f.read())
+        except FileNotFoundError:
+            print(f"Warning: CSS file not found at {css_path}")
+
         # Save PDF button
         save_pdf_action = QAction(QIcon.fromTheme("document-save", QIcon()), "💾", self)
         save_pdf_action.setToolTip("Save PDF with annotations (Cmd+S / Ctrl+S)")
@@ -181,7 +191,7 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         toolbar.addAction(self.add_image_action)
 
         # Add Doodle button (checkable for mode selection)
-        self.add_doodle_action = QAction(QIcon.fromTheme("draw-freehand", QIcon()), "✏️", self)
+        self.add_doodle_action = QAction(QIcon.fromTheme("draw-freehand", QIcon()), "✎", self)
         self.add_doodle_action.setToolTip("Doodle Mode - Click to draw on PDF")
         self.add_doodle_action.setCheckable(True)
         self.add_doodle_action.triggered.connect(lambda: self.set_mode(EditMode.DOODLE))
@@ -190,7 +200,11 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         return toolbar
 
     def set_mode(self, mode):
-        """Set the current editing mode (text, image, or doodle)"""
+        """
+        Set the current editing mode (text, image, or doodle).
+
+        Updates button states and cursor to match the selected mode.
+        """
         self.current_mode = mode
 
         # Update button states - only one should be checked
@@ -200,6 +214,14 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
 
         # Update label's current mode for cursor changes
         self.label.current_mode = mode
+
+        # Update cursor based on mode
+        if mode == EditMode.TEXT:
+            self.label.setCursor(TEXT_MODE_CURSOR)
+        elif mode == EditMode.IMAGE:
+            self.label.setCursor(IMAGE_MODE_CURSOR)
+        elif mode == EditMode.DOODLE:
+            self.label.setCursor(DOODLE_MODE_CURSOR)
 
     # PDF Operations
     def open_pdf(self):

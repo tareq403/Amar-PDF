@@ -51,6 +51,13 @@ from core.constants.drawing import (
     DOODLE_PADDING
 )
 
+# Cursor constants
+from core.constants.cursors import (
+    TEXT_MODE_CURSOR,
+    IMAGE_MODE_CURSOR,
+    DOODLE_MODE_CURSOR
+)
+
 __all__ = [
     # Rendering
     'BASE_SCALE',
@@ -86,4 +93,8 @@ __all__ = [
     'CANVAS_WIDTH',
     'CANVAS_HEIGHT',
     'DOODLE_PADDING',
+    # Cursors
+    'TEXT_MODE_CURSOR',
+    'IMAGE_MODE_CURSOR',
+    'DOODLE_MODE_CURSOR',
 ]
