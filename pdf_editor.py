@@ -254,16 +254,53 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         if not path:
             return
 
+        # Store current file path to check if saving to same file
+        current_file = self.doc.name if hasattr(self.doc, 'name') else None
+        is_same_file = current_file and current_file == path
+
         # Apply annotations to PDF
         self.save_pdf_with_annotations(self.doc, self.draft_annotations)
 
         # Save document
-        self.doc.save(path)
+        if is_same_file:
+            # Saving to the same file that's currently open
+            # Need to use a temporary file to avoid "save to original must be incremental" error
+            import tempfile
+            import shutil
 
-        # Clear and reload
+            # Create temporary file
+            with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_file:
+                temp_path = tmp_file.name
+
+            try:
+                # Save to temporary file
+                self.doc.save(temp_path)
+
+                # Close the current document
+                self.doc.close()
+
+                # Replace original with temporary file
+                shutil.move(temp_path, path)
+
+                # Reopen the saved file
+                self.doc = self.open_pdf_file(path)
+            except Exception as e:
+                # If anything fails, try to clean up temp file
+                import os
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+                QMessageBox.critical(self, "Save Error", f"Failed to save PDF: {str(e)}")
+                return
+        else:
+            # Saving to a different file - direct save works fine
+            self.doc.save(path)
+            # Close old document and open the new one
+            self.doc.close()
+            self.doc = self.open_pdf_file(path)
+
+        # Clear draft annotations and reload page
         self.draft_annotations = []
         self.label.annotations = []
-        self.doc = self.open_pdf_file(path)
         self.show_page(self.current_page)
 
     def merge_pdf(self) -> None:
