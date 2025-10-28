@@ -1,6 +1,6 @@
 # PDF Editor
 
-A professional PDF viewer and editor application built with PyQt5 and PyMuPDF (fitz). Features a clean, modular architecture following OOP best practices.
+A professional PDF viewer and editor application built with PyQt5 and PyMuPDF (fitz). Features a clean, modular architecture with comprehensive annotation tools, page management, and PDF merging capabilities.
 
 ## Features
 
@@ -18,6 +18,7 @@ A professional PDF viewer and editor application built with PyQt5 and PyMuPDF (f
   - Font family selection (Arial, Times, Courier, etc.)
   - Font sizes from 6pt to 72pt
   - Bold, italic, underline, strikethrough styles
+  - Color picker for custom text colors
 - **Interactive Editing**:
   - Drag annotations to reposition
   - Double-click to edit text and formatting
@@ -52,7 +53,7 @@ A professional PDF viewer and editor application built with PyQt5 and PyMuPDF (f
 ### File Operations
 - **Open PDF**: Load PDF files for viewing and editing
 - **Save PDF**: Export with all annotations permanently applied
-- **Merge PDF**: Combine multiple PDF files seamlessly
+- **Link another PDF**: Merge multiple PDF files seamlessly (available in toolbar and File menu)
 
 ### Keyboard Shortcuts
 - **Cmd+O / Ctrl+O**: Open PDF
@@ -70,30 +71,43 @@ A professional PDF viewer and editor application built with PyQt5 and PyMuPDF (f
 PdfEditor/
 ├── core/                          # Framework-level code
 │   ├── __init__.py
-│   ├── constants.py              # 30+ application constants
+│   ├── annotation_manager.py     # Centralized annotation management
 │   ├── config.py                 # Runtime configuration
-│   └── enums.py                  # EditMode, ResizeEdge enums
+│   ├── enums.py                  # EditMode, ResizeEdge enums
+│   ├── exceptions.py             # Custom exception hierarchy
+│   ├── logging_config.py         # Logging infrastructure
+│   └── constants/                # Domain-organized constants
+│       ├── __init__.py
+│       ├── rendering.py          # Rendering and zoom constants
+│       ├── ui.py                 # UI dimension constants
+│       ├── text.py               # Text and font constants
+│       ├── drawing.py            # Drawing and pen constants
+│       └── cursors.py            # Mode-specific cursor constants
 │
 ├── models/                        # Data models
 │   ├── __init__.py
 │   ├── annotation.py             # Base Annotation ABC
-│   ├── text_annotation.py        # Text annotation model
+│   ├── text_annotation.py        # Text annotation model with color support
+│   ├── text_format.py            # Text formatting dataclass
 │   ├── image_annotation.py       # Image annotation model
-│   └── doodle_annotation.py      # Doodle annotation model
+│   ├── doodle_annotation.py      # Doodle annotation model
+│   └── drawing_data.py           # Drawing data structures (Stroke, DrawingData)
 │
 ├── ui/                            # User interface components
 │   ├── __init__.py
 │   ├── dialogs/                  # Dialog windows
 │   │   ├── __init__.py
-│   │   ├── text_format_dialog.py
-│   │   └── doodle_dialog.py
+│   │   ├── text_format_dialog.py # Text input with color picker
+│   │   └── doodle_dialog.py      # Free-hand drawing dialog
 │   ├── widgets/                  # Custom widgets
 │   │   ├── __init__.py
-│   │   ├── pdf_view_label.py
-│   │   └── page_widget.py
-│   └── windows/                  # Window classes
-│       ├── __init__.py
-│       └── all_pages_window.py
+│   │   ├── pdf_view_label.py     # Main PDF display with annotations
+│   │   └── page_widget.py        # Draggable page widget
+│   ├── windows/                  # Window classes
+│   │   ├── __init__.py
+│   │   └── all_pages_window.py   # Page management window
+│   └── styles/                   # Stylesheets
+│       └── toolbar.css           # Toolbar styling
 │
 ├── operations/                    # Business logic
 │   ├── __init__.py
@@ -106,122 +120,8 @@ PdfEditor/
 │
 ├── main.py                        # Application entry point
 ├── pdf_editor.py                 # Main PDFEditor window class
-├── README.md                      # This file
+└── README.md                      # This file
 ```
-
-## Module Overview
-
-### core/
-**Framework-level code and configuration**
-
-- **constants.py**: All application constants
-  - Rendering scales, zoom levels
-  - UI dimensions and thresholds
-  - Font defaults and ranges
-  - Canvas and pen settings
-
-- **config.py**: Runtime configuration
-  - Window geometry defaults
-  - File format filters
-  - Debug settings
-
-- **enums.py**: Type-safe enumerations
-  - `EditMode`: TEXT, IMAGE, DOODLE
-  - `ResizeEdge`: LEFT, RIGHT, TOP, BOTTOM
-
-### models/
-**Data models with zoom-aware coordinate management**
-
-- **annotation.py**: Abstract base class
-  - Common zoom calculation helpers
-  - Point containment checking
-  - Scaled position calculation
-
-- **text_annotation.py**: Text annotation model
-  - Font formatting support
-  - Dynamic bounding box calculation
-  - QFont integration
-
-- **image_annotation.py**: Image annotation model
-  - Image loading and caching
-  - Resize support
-  - Pixmap scaling
-
-- **doodle_annotation.py**: Doodle annotation model
-  - Stroke data management
-  - Pixmap generation from strokes
-  - Bounding box calculation
-
-### ui/
-**User interface components**
-
-- **dialogs/text_format_dialog.py**: Text input dialog
-  - Font family combo box
-  - Size spinner (6-72pt)
-  - Style checkboxes (bold, italic, underline, strikethrough)
-
-- **dialogs/doodle_dialog.py**: Drawing dialog
-  - DrawingCanvas widget with mouse tracking
-  - Color picker integration
-  - Pen width control (1-20px)
-  - Clear canvas function
-
-- **widgets/pdf_view_label.py**: Main PDF display widget
-  - Annotation rendering with dashed borders
-  - Drag-and-drop support for all annotation types
-  - Resize handles for images/doodles
-  - Mode-aware cursor changes
-  - Double-click text editing
-
-- **widgets/page_widget.py**: Draggable page widget
-  - Visual page representation with thumbnail
-  - Drag-and-drop page reordering
-  - Selection highlighting
-  - Delete button integration
-
-- **windows/all_pages_window.py**: All pages overview window
-  - Vertical page layout at 10% zoom
-  - Non-destructive preview mode
-  - Page mapping system for tracking changes
-  - Cancel/Confirm buttons
-  - Annotation migration on page operations
-
-### operations/
-**Business logic operations**
-
-- **pdf_operations.py**: PDF file operations (Mixin)
-  - Open PDF documents with PyMuPDF
-  - Render pages at zoom levels
-  - Save annotations to PDF with coordinate conversion
-  - Font mapping for PDF compatibility
-
-- **window_manager.py**: Window management (Mixin)
-  - Calculate optimal window size
-  - Center window on screen
-  - Multi-monitor support
-
-### utils/
-**Helper utilities**
-
-- **helpers.py**: Utility functions
-  - Rectangle creation with int conversion
-  - Coordinate scaling
-  - PDF ↔ Screen coordinate conversion
-
-### Application Files
-
-- **main.py**: Clean entry point
-  - Application initialization
-  - Main event loop
-
-- **pdf_editor.py**: Main window class
-  - Inherits from QMainWindow, PDFOperations, WindowManager
-  - UI setup (menubar, toolbar, scroll area, navigation)
-  - Mode management
-  - Event handling
-  - Annotation creation and management
-  - All pages window integration
-  - PDF merging functionality
 
 ## Architecture
 
@@ -229,9 +129,12 @@ PdfEditor/
 
 1. **Abstract Base Class (ABC)**: `Annotation` base class with abstract `get_rect()` method
 2. **Mixin Pattern**: `PDFOperations` and `WindowManager` provide specific functionality
-3. **Enum Pattern**: Type-safe `EditMode` and `ResizeEdge` enums
-4. **Configuration Pattern**: Centralized constants and config
-5. **Module Pattern**: Package-based organization
+3. **Factory Pattern**: Factory methods for creating annotation instances from various data sources
+4. **Singleton Pattern**: `PDFEditorLogger` uses singleton for centralized logging
+5. **Dataclass Pattern**: Type-safe data models (`TextFormat`, `DrawingData`, `Stroke`)
+6. **Enum Pattern**: Type-safe `EditMode` and `ResizeEdge` enums
+7. **Configuration Pattern**: Centralized domain-organized constants and config
+8. **Module Pattern**: Package-based organization with clear separation of concerns
 
 ### Key Architectural Decisions
 
@@ -302,6 +205,7 @@ python main.py
    - Font family
    - Font size (6-72pt)
    - Bold, Italic, Underline, Strikethrough
+   - Text color (click color button to choose)
 4. Click **OK**
 5. Text appears with blue dashed border (draft mode)
 
@@ -342,7 +246,7 @@ python main.py
 
 ### 8. Merging PDFs
 1. Open a PDF document
-2. Click **Merge PDF** button in toolbar
+2. Click **Link PDF** button in toolbar or **File → Link another PDF** menu
 3. Select the PDF file to merge
 4. The selected PDF's pages are appended to the current document
 5. A success dialog shows:
@@ -367,37 +271,6 @@ python main.py
 |----------|--------|
 | Cmd+O / Ctrl+O | Open PDF |
 | Cmd+S / Ctrl+S | Save PDF |
-
-## Constants Reference
-
-All constants are defined in `core/constants.py`:
-
-### Rendering
-- `BASE_SCALE = 2.0` - High DPI rendering scale
-- `MIN_ZOOM = 0.25` - 25% minimum zoom
-- `MAX_ZOOM = 4.0` - 400% maximum zoom
-- `DEFAULT_ZOOM = 1.0` - 100% default zoom
-
-### UI Dimensions
-- `EDGE_RESIZE_THRESHOLD = 10` - Pixels from edge to trigger resize
-- `WINDOW_MARGIN = 50` - Screen edge margin
-- `MIN_ANNOTATION_SIZE = 10` - Minimum annotation dimension
-
-### Fonts
-- `DEFAULT_FONT = "Arial"`
-- `DEFAULT_FONT_SIZE = 12`
-- `MIN_FONT_SIZE = 6`
-- `MAX_FONT_SIZE = 72`
-
-### Drawing
-- `DEFAULT_PEN_WIDTH = 2`
-- `MIN_PEN_WIDTH = 1`
-- `MAX_PEN_WIDTH = 20`
-
-### Canvas
-- `CANVAS_WIDTH = 600`
-- `CANVAS_HEIGHT = 400`
-- `DOODLE_PADDING = 10`
 
 ## Development
 
@@ -431,26 +304,17 @@ python test_imports.py
 - Use type hints where appropriate
 - Add docstrings to all public methods
 
-## Project Statistics
+## Key Features Summary
 
-| Component | Files |
-|-----------|-------|
-| core/ | 4 |
-| models/ | 5 |
-| ui/dialogs/ | 3 |
-| ui/widgets/ | 3 |
-| ui/windows/ | 2 |
-| operations/ | 3 |
-| utils/ | 2 |
-| main files | 2 |
-| **Total** | **24** |
-
-**Key Features:**
-- Multi-mode editing (Text, Image, Doodle)
-- Page management (Reorder, Delete, Merge)
-- Advanced annotations with zoom-aware positioning
-- Non-destructive preview for page operations
-- Comprehensive error handling and user feedback
+- **Multi-mode editing**: Text, Image, and Doodle modes with mode-specific cursors
+- **Rich text annotations**: Font customization, styling, and color picker
+- **Page management**: Drag-and-drop reordering, deletion, and PDF merging
+- **Advanced zoom system**: 25%-400% with zoom-aware annotation positioning
+- **Modular architecture**: Clean separation of concerns with domain-organized constants
+- **Logging infrastructure**: Comprehensive logging with file and console handlers
+- **Custom exceptions**: Hierarchical exception system for robust error handling
+- **Factory methods**: Type-safe object creation for all annotation types
+- **Non-destructive editing**: Preview mode for page operations before applying
 
 ## License
 
@@ -460,11 +324,13 @@ This project is provided as-is for educational purposes.
 
 When contributing, please:
 1. Follow the established package structure
-2. Add constants to `core/constants.py` rather than using magic numbers
+2. Add constants to appropriate files in `core/constants/` rather than using magic numbers
 3. Keep files focused and under 300 lines
 4. Update `__init__.py` files when adding new modules
 5. Test imports with `test_imports.py`
 6. Update this README if adding new features
+7. Use factory methods for object creation when available
+8. Follow the established logging patterns for debugging
 
 ## Acknowledgments
 
