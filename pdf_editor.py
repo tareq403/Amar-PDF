@@ -527,18 +527,12 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
             x: X coordinate in label space
             y: Y coordinate in label space
             text_format: TextFormat object with formatting properties
+
+        Note:
+            Uses the TextAnnotation.from_text_format() factory method for
+            type-safe creation with all formatting properties including color.
         """
-        annotation = TextAnnotation(
-            x, y,
-            text_format.text,
-            self.current_page,
-            font_family=text_format.font_family,
-            font_size=text_format.font_size,
-            bold=text_format.bold,
-            italic=text_format.italic,
-            underline=text_format.underline,
-            strikethrough=text_format.strikethrough
-        )
+        annotation = TextAnnotation.from_text_format(x, y, self.current_page, text_format)
         annotation.created_at_zoom = self.zoom_level
 
         self.draft_annotations.append(annotation)

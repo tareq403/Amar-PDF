@@ -49,7 +49,9 @@ class PDFViewLabel(QLabel):
                 # Draw text with formatting at zoom level
                 font = annotation.get_qfont(self.zoom_level)
                 painter.setFont(font)
-                pen = QPen(Qt.black)
+                # Use annotation color
+                text_color = annotation.get_qcolor()
+                pen = QPen(text_color)
                 painter.setPen(pen)
                 painter.drawText(rect.adjusted(5, 0, -5, 0), Qt.AlignLeft | Qt.AlignVCenter, annotation.text)
 
@@ -224,7 +226,8 @@ class PDFViewLabel(QLabel):
                     bold=annotation.bold,
                     italic=annotation.italic,
                     underline=annotation.underline,
-                    strikethrough=annotation.strikethrough
+                    strikethrough=annotation.strikethrough,
+                    color=annotation.color
                 )
 
                 dialog = TextFormatDialog(self, initial_format=initial_format)
@@ -238,6 +241,7 @@ class PDFViewLabel(QLabel):
                         annotation.italic = text_format.italic
                         annotation.underline = text_format.underline
                         annotation.strikethrough = text_format.strikethrough
+                        annotation.color = text_format.color
                         annotation.update_bounds()
                         self.update()
                 event.accept()

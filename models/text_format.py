@@ -3,6 +3,7 @@ Text formatting data model
 """
 
 from dataclasses import dataclass
+from typing import Tuple
 from core.constants import DEFAULT_FONT, DEFAULT_FONT_SIZE
 
 
@@ -22,6 +23,7 @@ class TextFormat:
         italic: Whether text should be italic
         underline: Whether text should be underlined
         strikethrough: Whether text should have strikethrough
+        color: RGB color tuple (r, g, b) where each value is 0-255
     """
     text: str
     font_family: str = DEFAULT_FONT
@@ -30,6 +32,7 @@ class TextFormat:
     italic: bool = False
     underline: bool = False
     strikethrough: bool = False
+    color: Tuple[int, int, int] = (0, 0, 0)  # Default: black
 
     def __post_init__(self):
         """Validate text format data after initialization"""
@@ -43,6 +46,16 @@ class TextFormat:
                 f"Font size must be between {MIN_FONT_SIZE} and {MAX_FONT_SIZE}, "
                 f"got {self.font_size}"
             )
+
+        # Validate color (RGB values 0-255)
+        if len(self.color) != 3:
+            raise ValueError(f"Color must be RGB tuple (r, g, b), got {self.color}")
+
+        for component in self.color:
+            if not (0 <= component <= 255):
+                raise ValueError(
+                    f"Color components must be 0-255, got {component} in {self.color}"
+                )
 
     def is_valid(self) -> bool:
         """Check if the format has valid text content"""

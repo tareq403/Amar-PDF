@@ -71,6 +71,9 @@ class PDFOperations:
                 }
                 base_fontname = font_map.get(fontname, fontname)
 
+                # Convert RGB color from 0-255 range to 0-1 range for PyMuPDF
+                pdf_color = tuple(c / 255.0 for c in annotation.color)
+
                 # Try to insert text with formatting
                 text_inserted = False
 
@@ -90,7 +93,7 @@ class PDFOperations:
                             annotation.text,
                             fontsize=annotation.font_size,
                             fontname=styled_fontname,
-                            color=(0, 0, 0)
+                            color=pdf_color
                         )
                         text_inserted = True
                     except Exception as e:
@@ -105,7 +108,7 @@ class PDFOperations:
                             annotation.text,
                             fontsize=annotation.font_size,
                             fontname=base_fontname,
-                            color=(0, 0, 0)
+                            color=pdf_color
                         )
                         text_inserted = True
                     except Exception as e:
@@ -120,7 +123,7 @@ class PDFOperations:
                             annotation.text,
                             fontsize=annotation.font_size,
                             fontname='Helvetica',
-                            color=(0, 0, 0)
+                            color=pdf_color
                         )
                         text_inserted = True
                     except Exception as e:
@@ -139,7 +142,7 @@ class PDFOperations:
                             page.draw_line(
                                 (pdf_x, underline_y),
                                 (pdf_x + text_width - 5, underline_y),
-                                color=(0, 0, 0),
+                                color=pdf_color,
                                 width=0.5
                             )
                         except Exception as e:
@@ -152,7 +155,7 @@ class PDFOperations:
                             page.draw_line(
                                 (pdf_x, strikethrough_y),
                                 (pdf_x + text_width - 5, strikethrough_y),
-                                color=(0, 0, 0),
+                                color=pdf_color,
                                 width=0.5
                             )
                         except Exception as e:

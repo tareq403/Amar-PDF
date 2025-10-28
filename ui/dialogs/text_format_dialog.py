@@ -4,8 +4,10 @@ Text formatting dialog
 
 from PyQt5.QtWidgets import (QDialog, QLineEdit, QFontComboBox, QSpinBox,
                              QCheckBox, QDialogButtonBox, QFormLayout,
-                             QGroupBox, QVBoxLayout, QMessageBox)
-from PyQt5.QtGui import QFont
+                             QGroupBox, QVBoxLayout, QMessageBox, QPushButton,
+                             QHBoxLayout, QColorDialog)
+from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtCore import Qt
 from typing import Optional
 
 from core.constants import DEFAULT_FONT, DEFAULT_FONT_SIZE, MIN_FONT_SIZE, MAX_FONT_SIZE
@@ -31,6 +33,9 @@ class TextFormatDialog(QDialog):
         # Use provided format or create default
         format_obj = initial_format or TextFormat(text="")
 
+        # Store current color
+        self.current_color = QColor(*format_obj.color)
+
         layout = QVBoxLayout(self)
 
         # Text input
@@ -50,6 +55,16 @@ class TextFormatDialog(QDialog):
         self.size_spin.setMaximum(MAX_FONT_SIZE)
         self.size_spin.setValue(format_obj.font_size)
         form_layout.addRow("Size:", self.size_spin)
+
+        # Color selection
+        color_layout = QHBoxLayout()
+        self.color_button = QPushButton("Choose Color")
+        self.color_button.clicked.connect(self._choose_color)
+        self.color_button.setMinimumHeight(30)
+        self._update_color_button()
+        color_layout.addWidget(self.color_button)
+        color_layout.addStretch()
+        form_layout.addRow("Color:", color_layout)
 
         layout.addLayout(form_layout)
 
@@ -81,6 +96,28 @@ class TextFormatDialog(QDialog):
         button_box.accepted.connect(self._on_accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
+
+    def _choose_color(self):
+        """Open color picker dialog"""
+        color = QColorDialog.getColor(self.current_color, self, "Choose Text Color")
+        if color.isValid():
+            self.current_color = color
+            self._update_color_button()
+
+    def _update_color_button(self):
+        """Update the color button's appearance to show current color"""
+        # Set background color and adjust text color for contrast
+        r, g, b = self.current_color.red(), self.current_color.green(), self.current_color.blue()
+        # Calculate brightness to determine text color
+        brightness = (r * 299 + g * 587 + b * 114) / 1000
+        text_color = "black" if brightness > 128 else "white"
+
+        self.color_button.setStyleSheet(
+            f"background-color: rgb({r}, {g}, {b}); "
+            f"color: {text_color}; "
+            f"border: 1px solid #999; "
+            f"padding: 5px;"
+        )
 
     def _on_accept(self):
         """Validate input before accepting dialog"""
@@ -114,5 +151,6 @@ class TextFormatDialog(QDialog):
             bold=self.bold_check.isChecked(),
             italic=self.italic_check.isChecked(),
             underline=self.underline_check.isChecked(),
-            strikethrough=self.strikethrough_check.isChecked()
+            strikethrough=self.strikethrough_check.isChecked(),
+            color=(self.current_color.red(), self.current_color.green(), self.current_color.blue())
         )

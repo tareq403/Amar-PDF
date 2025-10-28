@@ -2,8 +2,8 @@
 Text annotation model
 """
 
-from typing import TYPE_CHECKING
-from PyQt5.QtGui import QFont, QFontMetrics
+from typing import TYPE_CHECKING, Tuple
+from PyQt5.QtGui import QFont, QFontMetrics, QColor
 from PyQt5.QtCore import QRect
 
 from core.constants import (BASE_SCALE, DEFAULT_FONT, DEFAULT_FONT_SIZE,
@@ -18,7 +18,8 @@ if TYPE_CHECKING:
 class TextAnnotation(Annotation):
     """Represents a text annotation in draft mode"""
     def __init__(self, x, y, text, page_num, font_family=DEFAULT_FONT, font_size=DEFAULT_FONT_SIZE,
-                 bold=False, italic=False, underline=False, strikethrough=False):
+                 bold=False, italic=False, underline=False, strikethrough=False,
+                 color: Tuple[int, int, int] = (0, 0, 0)):
         super().__init__(x, y, page_num)
         self.text = text
         self.font_family = font_family
@@ -27,6 +28,7 @@ class TextAnnotation(Annotation):
         self.italic = italic
         self.underline = underline
         self.strikethrough = strikethrough
+        self.color = color  # RGB tuple (r, g, b)
         self.update_bounds()
 
     def update_bounds(self, zoom_level=1.0):
@@ -55,6 +57,15 @@ class TextAnnotation(Annotation):
         # Recalculate bounds for current zoom
         self.update_bounds(current_zoom)
         return QRect(int(scaled_x), int(scaled_y - self.height + TEXT_ANNOTATION_Y_OFFSET), int(self.width), int(self.height))
+
+    def get_qcolor(self) -> QColor:
+        """
+        Get QColor object from RGB tuple.
+
+        Returns:
+            QColor object for Qt rendering
+        """
+        return QColor(*self.color)
 
     @classmethod
     def from_text_format(cls, x: float, y: float, page_num: int, text_format: 'TextFormat') -> 'TextAnnotation':
@@ -87,7 +98,8 @@ class TextAnnotation(Annotation):
             bold=text_format.bold,
             italic=text_format.italic,
             underline=text_format.underline,
-            strikethrough=text_format.strikethrough
+            strikethrough=text_format.strikethrough,
+            color=text_format.color
         )
 
     @classmethod
