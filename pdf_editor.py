@@ -23,7 +23,7 @@ from core.constants import (BASE_SCALE, MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM,
                              DEFAULT_MENUBAR_HEIGHT,
                              TEXT_MODE_CURSOR, IMAGE_MODE_CURSOR, DOODLE_MODE_CURSOR)
 from core.config import Config
-from ui.dialogs import TextFormatDialog, DoodleDialog
+from ui.dialogs import TextFormatDialog, DoodleDialog, UserGuideDialog
 from ui import AllPagesWindow
 from ui.styles import TOOLBAR_STYLESHEET
 from models import TextAnnotation, ImageAnnotation, DoodleAnnotation, TextFormat, DrawingData
@@ -160,6 +160,13 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         link_pdf_action.triggered.connect(self.merge_pdf)
         file_menu.addAction(link_pdf_action)
 
+        # Help menu
+        help_menu = menubar.addMenu("Help")
+
+        user_guide_action = QAction("User Guide", self)
+        user_guide_action.triggered.connect(self.show_user_guide)
+        help_menu.addAction(user_guide_action)
+
     def _setup_toolbar(self):
         """Setup the toolbar"""
         toolbar = self.addToolBar("Main Toolbar")
@@ -204,6 +211,14 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.add_doodle_action.setCheckable(True)
         self.add_doodle_action.triggered.connect(lambda: self.set_mode(EditMode.DOODLE))
         toolbar.addAction(self.add_doodle_action)
+
+        toolbar.addSeparator()
+
+        # User Guide button
+        user_guide_action = QAction(QIcon.fromTheme("help-contents", QIcon()), "?", self)
+        user_guide_action.setToolTip("User Guide")
+        user_guide_action.triggered.connect(self.show_user_guide)
+        toolbar.addAction(user_guide_action)
 
         return toolbar
 
@@ -618,3 +633,8 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         # Create and show the all pages window
         all_pages_window = AllPagesWindow(self.doc, self)
         all_pages_window.show()
+
+    def show_user_guide(self):
+        """Show the user guide dialog"""
+        guide_dialog = UserGuideDialog(self)
+        guide_dialog.exec_()

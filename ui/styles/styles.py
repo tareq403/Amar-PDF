@@ -2,6 +2,34 @@
 Stylesheet constants for UI components
 """
 
+USER_GUIDE_STYLESHEET = """
+QDialog {
+    background-color: #ffffff;
+}
+
+QTextBrowser {
+    background-color: #ffffff;
+    color: #333333;
+}
+
+QPushButton {
+    background-color: #0078d4;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 11pt;
+}
+
+QPushButton:hover {
+    background-color: #106ebe;
+}
+
+QPushButton:pressed {
+    background-color: #005a9e;
+}
+"""
+
 TOOLBAR_STYLESHEET = """
 QToolBar {
     spacing: 3px;
