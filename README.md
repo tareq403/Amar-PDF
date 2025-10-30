@@ -1,4 +1,10 @@
-# PDF Editor
+# Amar PDF (PDF Editor)
+
+## Download
+Download for Windows, Mac, and Linux from here: [Releases](https://github.com/tareq403/Amar-PDF/releases)
+
+## See Amar PDF in Action
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/R61yBDCa_p0/0.jpg)](https://www.youtube.com/watch?v=R61yBDCa_p0)
 
 A professional PDF viewer and editor application built with PyQt5 and PyMuPDF (fitz). Features a clean, modular architecture with comprehensive annotation tools, page management, and PDF merging capabilities.
 
