@@ -25,9 +25,10 @@ env/
 .DS_Store
 Thumbs.db
 
-# Markdown files (except README.md)
+# Markdown files (except README.md and BUILDING.md)
 *.md
 !README.md
+!BUILDING.md
 
 # PDF output files
 edited.pdf
@@ -39,3 +40,17 @@ edited.pdf
 # Application logs
 logs/
 *.log
+
+# PyInstaller build files
+build/
+dist/
+*.spec.lock
+
+# Icon resources (track these!)
+# The following icon files should be committed:
+# !resources/icons/icon.png
+# !resources/icons/icon.ico
+# !resources/icons/icon.icns
+# Exclude temporary icon generation files
+resources/icons/icon.iconset/
+resources/icons/icon_base.png
