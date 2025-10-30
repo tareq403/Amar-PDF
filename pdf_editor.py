@@ -115,6 +115,12 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.zoom_label.setMinimumWidth(50)
         button_layout.addWidget(self.zoom_label)
 
+        # Page counter label
+        self.page_label = QLabel("Page -/-")
+        self.page_label.setMinimumWidth(80)
+        self.page_label.setAlignment(Qt.AlignCenter)
+        button_layout.addWidget(self.page_label)
+
         # Next button
         self.next_button = QPushButton(">")
         self.next_button.setToolTip("Next Page")
@@ -122,6 +128,9 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.next_button.setEnabled(False)
         self.next_button.setMaximumWidth(40)
         button_layout.addWidget(self.next_button)
+
+        # Add spacing between next button and see all pages button
+        button_layout.addSpacing(10)
 
         # See All Pages button
         self.all_pages_button = QPushButton("See All Pages")
@@ -265,6 +274,9 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         self.label.annotations = [a for a in self.draft_annotations if a.page_num == page_num]
         self.label.zoom_level = self.zoom_level
         self.label.update()
+
+        # Update page counter label
+        self.page_label.setText(f"Page {page_num + 1}/{len(self.doc)}")
 
     def save_pdf(self):
         """
