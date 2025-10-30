@@ -51,13 +51,13 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           ls -lh dist/
-          file dist/PDF-Editor
+          file dist/Amar-PDF
 
       - name: Verify build (macOS)
         if: runner.os == 'macOS'
         run: |
           ls -lh dist/
-          ls -lh dist/PDF-Editor.app/Contents/MacOS/
+          ls -lh dist/Amar-PDF.app/Contents/MacOS/
 
       - name: Verify build (Windows)
         if: runner.os == 'Windows'
@@ -68,7 +68,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd dist
-          tar -czf PDF-Editor-macOS.app.tar.gz PDF-Editor.app
+          tar -czf Amar-PDF-macOS.app.tar.gz Amar-PDF.app
           cd ..
 
       - name: Upload artifact (Linux)
@@ -76,21 +76,21 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/PDF-Editor
+          path: dist/Amar-PDF
 
       - name: Upload artifact (macOS)
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}
-          path: dist/PDF-Editor-macOS.app.tar.gz
+          path: dist/Amar-PDF-macOS.app.tar.gz
 
       - name: Upload artifact (Windows)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}
-          path: dist/PDF-Editor.exe
+          path: dist/Amar-PDF.exe
 
   release:
     name: Create Release
