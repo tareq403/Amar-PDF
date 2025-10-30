@@ -25,6 +25,7 @@ from core.constants import (BASE_SCALE, MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM,
 from core.config import Config
 from ui.dialogs import TextFormatDialog, DoodleDialog
 from ui import AllPagesWindow
+from ui.styles import TOOLBAR_STYLESHEET
 from models import TextAnnotation, ImageAnnotation, DoodleAnnotation, TextFormat, DrawingData
 from ui.widgets import PDFViewLabel
 from operations import PDFOperations, WindowManager
@@ -156,14 +157,8 @@ class PDFEditor(QMainWindow, PDFOperations, WindowManager):
         toolbar.setMovable(False)
         toolbar.setToolButtonStyle(Qt.ToolButtonIconOnly)
 
-        # Load and apply styling from CSS file
-        import os
-        css_path = os.path.join(os.path.dirname(__file__), 'ui', 'styles', 'toolbar.css')
-        try:
-            with open(css_path, 'r') as f:
-                toolbar.setStyleSheet(f.read())
-        except FileNotFoundError:
-            print(f"Warning: CSS file not found at {css_path}")
+        # Apply styling from constant
+        toolbar.setStyleSheet(TOOLBAR_STYLESHEET)
 
         # Save PDF button
         save_pdf_action = QAction(QIcon.fromTheme("document-save", QIcon()), "💾", self)

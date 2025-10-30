@@ -1,5 +1,8 @@
-/* PDF Editor Toolbar Styles */
+"""
+Stylesheet constants for UI components
+"""
 
+TOOLBAR_STYLESHEET = """
 QToolBar {
     spacing: 3px;
     padding: 2px;
@@ -40,3 +43,4 @@ QToolButton:checked:hover {
     background-color: #1084e0;
     border: 1px solid #004578;
 }
+"""
