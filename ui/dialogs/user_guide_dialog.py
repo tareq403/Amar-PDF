@@ -316,9 +316,32 @@ class UserGuideDialog(QDialog):
                 <ul class="steps">
                     <li><strong>Move:</strong> Click and drag annotation to new position</li>
                     <li><strong>Resize (Images/Doodles):</strong> Hover over edge until resize cursor appears, then drag</li>
-                    <li><strong>Edit Text:</strong> Double-click text annotation to edit content and formatting</li>
-                    <li><strong>Delete:</strong> Not yet implemented - create new PDF without unwanted annotations</li>
+                    <li><strong>Edit Text:</strong> Double-click text annotation OR right-click → Edit</li>
+                    <li><strong>Delete:</strong> Right-click on any annotation → Delete</li>
+                    <li><strong>Context Menu:</strong> Right-click any annotation for quick options</li>
                 </ul>
+            </div>
+
+            <div class="feature">
+                <h3>Right-Click Context Menu</h3>
+                <p>Right-click on any annotation to access quick actions:</p>
+                <ul class="steps">
+                    <li><strong>Text Annotations:</strong>
+                        <ul>
+                            <li>✏️ <strong>Edit</strong> - Modify text and formatting</li>
+                            <li>🗑️ <strong>Delete</strong> - Remove annotation (with confirmation)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Image/Doodle Annotations:</strong>
+                        <ul>
+                            <li>🗑️ <strong>Delete</strong> - Remove annotation (with confirmation)</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <div class="tip">
+                    <strong>💡 Tip:</strong> Deletion requires confirmation to prevent accidental removal!
+                </div>
             </div>
 
             <div class="feature">
@@ -347,9 +370,14 @@ class UserGuideDialog(QDialog):
             <h2>❓ Common Questions</h2>
 
             <div class="feature">
-                <h3>Can I undo an annotation?</h3>
-                <p>Before saving: Simply close and reopen the PDF. Unsaved annotations are discarded.</p>
-                <p>After saving: Annotations are permanent. Open the original PDF to start over.</p>
+                <h3>Can I undo or delete an annotation?</h3>
+                <p><strong>Before saving:</strong></p>
+                <ul class="steps">
+                    <li><strong>Delete single annotation:</strong> Right-click → Delete</li>
+                    <li><strong>Discard all unsaved annotations:</strong> Close and reopen the PDF</li>
+                </ul>
+                <p><strong>After saving:</strong> Annotations are permanently applied to the PDF.
+                To remove them, you need to open the original PDF file and start over.</p>
             </div>
 
             <div class="feature">

@@ -3,7 +3,7 @@ PDF View Label widget
 Custom label for displaying and interacting with PDF annotations
 """
 
-from PyQt5.QtWidgets import QLabel, QDialog
+from PyQt5.QtWidgets import QLabel, QDialog, QMenu, QMessageBox
 from PyQt5.QtGui import QPainter, QPen
 from PyQt5.QtCore import Qt, QPoint
 
@@ -248,3 +248,86 @@ class PDFViewLabel(QLabel):
                 return
 
         super().mouseDoubleClickEvent(event)
+
+    def contextMenuEvent(self, event):
+        """Handle right-click context menu for annotations"""
+        # Check if right-clicking on an annotation
+        clicked_annotation = None
+        for annotation in self.annotations:
+            if annotation.contains_point(event.x(), event.y(), self.zoom_level):
+                clicked_annotation = annotation
+                break
+
+        if clicked_annotation:
+            # Create context menu
+            menu = QMenu(self)
+
+            # Add Edit option for text annotations
+            if isinstance(clicked_annotation, TextAnnotation):
+                edit_action = menu.addAction("✏️ Edit")
+                edit_action.triggered.connect(lambda: self._edit_annotation(clicked_annotation, event.x(), event.y()))
+
+            # Add Delete option for all annotations
+            delete_action = menu.addAction("🗑️ Delete")
+            delete_action.triggered.connect(lambda: self._delete_annotation(clicked_annotation))
+
+            # Show the menu at cursor position
+            menu.exec_(event.globalPos())
+            event.accept()
+        else:
+            super().contextMenuEvent(event)
+
+    def _edit_annotation(self, annotation, x, y):
+        """Edit a text annotation (same as double-click)"""
+        if isinstance(annotation, TextAnnotation):
+            # Create TextFormat from annotation properties
+            initial_format = TextFormat(
+                text=annotation.text,
+                font_family=annotation.font_family,
+                font_size=annotation.font_size,
+                bold=annotation.bold,
+                italic=annotation.italic,
+                underline=annotation.underline,
+                strikethrough=annotation.strikethrough,
+                color=annotation.color
+            )
+
+            dialog = TextFormatDialog(self, initial_format=initial_format)
+            if dialog.exec_() == QDialog.Accepted:
+                text_format = dialog.get_values()
+                if text_format.is_valid():
+                    annotation.text = text_format.text
+                    annotation.font_family = text_format.font_family
+                    annotation.font_size = text_format.font_size
+                    annotation.bold = text_format.bold
+                    annotation.italic = text_format.italic
+                    annotation.underline = text_format.underline
+                    annotation.strikethrough = text_format.strikethrough
+                    annotation.color = text_format.color
+                    annotation.update_bounds()
+                    self.update()
+
+    def _delete_annotation(self, annotation):
+        """Delete an annotation with confirmation"""
+        # Ask for confirmation
+        reply = QMessageBox.question(
+            self,
+            "Delete Annotation",
+            "Are you sure you want to delete this annotation?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            # Remove from local list
+            if annotation in self.annotations:
+                self.annotations.remove(annotation)
+
+            # Remove from parent's draft annotations
+            parent = self.parent()
+            if parent and hasattr(parent, 'draft_annotations'):
+                if annotation in parent.draft_annotations:
+                    parent.draft_annotations.remove(annotation)
+
+            # Refresh display
+            self.update()
