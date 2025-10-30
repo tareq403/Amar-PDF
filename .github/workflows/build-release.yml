@@ -1,0 +1,135 @@
+name: Build and Release
+
+on:
+  # Trigger on version tags (e.g., v1.0.0)
+  push:
+    tags:
+      - 'v*'
+  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: Amar-PDF-Linux
+            asset_name: Amar-PDF-Linux
+          - os: macos-latest
+            artifact_name: Amar-PDF.app
+            asset_name: Amar-PDF-macOS.app
+          - os: windows-latest
+            artifact_name: Amar-PDF.exe
+            asset_name: Amar-PDF-Windows.exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          # Icons are automatically included via spec file configuration
+          # Spec file will use platform-specific icons from resources/icons/
+          pyinstaller Amar-PDF.spec
+
+      - name: Verify build (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          ls -lh dist/
+          file dist/PDF-Editor
+
+      - name: Verify build (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          ls -lh dist/
+          ls -lh dist/PDF-Editor.app/Contents/MacOS/
+
+      - name: Verify build (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          dir dist
+
+      - name: Create tarball for macOS app bundle
+        if: runner.os == 'macOS'
+        run: |
+          cd dist
+          tar -czf PDF-Editor-macOS.app.tar.gz PDF-Editor.app
+          cd ..
+
+      - name: Upload artifact (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/PDF-Editor
+
+      - name: Upload artifact (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: dist/PDF-Editor-macOS.app.tar.gz
+
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: dist/PDF-Editor.exe
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts/
+
+      - name: Prepare release files
+        run: |
+          mkdir release-files
+          cp artifacts/Amar-PDF-Linux/Amar-PDF release-files/Amar-PDF-Linux
+          cp artifacts/Amar-PDF-macOS.app/Amar-PDF-macOS.app.tar.gz release-files/
+          cp artifacts/Amar-PDF-Windows.exe/Amar-PDF.exe release-files/Amar-PDF-Windows.exe
+          chmod +x release-files/Amar-PDF-Linux
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release-files/Amar-PDF-Linux
+            release-files/Amar-PDF-macOS.app.tar.gz
+            release-files/Amar-PDF-Windows.exe
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
